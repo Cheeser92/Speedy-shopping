@@ -14,11 +14,9 @@ const ActiveShoppingView: React.FC = () => {
   const list = shoppingLists.find(l => l.id === id);
   const [showFireworks, setShowFireworks] = useState(false);
 
-  // Derived state
   const currentStoreId = list?.storeId;
   const currentStore = stores.find(s => s.id === currentStoreId);
 
-  // Count checked items for Eraser logic
   const checkedCount = useMemo(() => {
       return list?.items.filter(i => i.isChecked).length || 0;
   }, [list]);
@@ -29,7 +27,6 @@ const ActiveShoppingView: React.FC = () => {
       i.productId === productId ? { ...i, isChecked: !i.isChecked } : i
     );
     
-    // Check for completion
     const allChecked = updatedItems.every(i => i.isChecked);
     if (allChecked && !list.items.every(i => i.isChecked)) {
        setShowFireworks(true);
@@ -44,12 +41,10 @@ const ActiveShoppingView: React.FC = () => {
     
     if (!list || checkedCount === 0) return;
 
-    // Suppression instantanée sans confirmation
     const remainingItems = list.items.filter(i => !i.isChecked);
     updateShoppingList({ ...list, items: remainingItems });
   };
 
-  // Grouping logic (similar to Detail view but strictly separating Checked items)
   const { activeGroups, checkedGroups } = useMemo(() => {
     if (!list || !currentStore) return { activeGroups: [], checkedGroups: [] };
 
@@ -86,7 +81,6 @@ const ActiveShoppingView: React.FC = () => {
   }, [list, products, currentStore, categories]);
 
 
-  // Progress
   const progress = useMemo(() => {
      if(!list || list.items.length === 0) return 0;
      const checked = checkedCount;
@@ -99,20 +93,20 @@ const ActiveShoppingView: React.FC = () => {
   if (!list) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 relative overflow-hidden">
+    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-950 relative overflow-hidden transition-colors duration-300">
       {/* Immersive Header */}
-      <div className="bg-white p-4 shadow-md flex justify-between items-center z-20 gap-3">
-        <button onClick={() => navigate(-1)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
-           <ArrowLeft size={24} className="text-gray-700"/>
+      <div className="bg-white dark:bg-slate-900 p-4 shadow-md flex justify-between items-center z-20 gap-3 transition-colors duration-300">
+        <button onClick={() => navigate(-1)} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700">
+           <ArrowLeft size={24} className="text-gray-700 dark:text-slate-200"/>
         </button>
         <div className="flex-1">
              {/* Progress Bar - Thicker */}
-             <div className="h-6 bg-gray-200 rounded-full overflow-hidden relative shadow-inner">
+             <div className="h-6 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden relative shadow-inner">
                  <div 
                     className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                  />
-                 <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 drop-shadow-sm">
+                 <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200 drop-shadow-sm mix-blend-difference filter invert-0 dark:invert">
                     {itemsRemaining === 0 ? 'Terminé !' : `${itemsRemaining} restant(s)`}
                  </span>
              </div>
@@ -121,7 +115,7 @@ const ActiveShoppingView: React.FC = () => {
             type="button"
             onClick={clearChecked} 
             disabled={checkedCount === 0}
-            className={`p-2 rounded-full transition-colors ${checkedCount > 0 ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`} 
+            className={`p-2 rounded-full transition-colors ${checkedCount > 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50' : 'bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-slate-600 cursor-not-allowed'}`} 
             title="Effacer les articles barrés"
         >
            <Eraser size={24} />
@@ -135,7 +129,7 @@ const ActiveShoppingView: React.FC = () => {
          <div className="space-y-6">
             {activeGroups.map(({ category, items }) => (
                 <div key={category.id}>
-                    <h3 className="flex items-center gap-2 text-xl font-bold text-indigo-700 mb-3 border-b-2 border-indigo-100 pb-1">
+                    <h3 className="flex items-center gap-2 text-xl font-bold text-primary-700 dark:text-primary-400 mb-3 border-b-2 border-primary-100 dark:border-slate-800 pb-1">
                         <IconComponent name={category.iconName} size={28} />
                         {category.name}
                     </h3>
@@ -148,12 +142,12 @@ const ActiveShoppingView: React.FC = () => {
                                 <div 
                                     key={item.productId}
                                     onClick={() => toggleCheck(item.productId)}
-                                    className="bg-white p-4 rounded-xl shadow-md border-l-8 border-indigo-500 flex justify-between items-center active:scale-95 transition-transform cursor-pointer"
+                                    className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md border-l-8 border-primary-500 dark:border-primary-400 flex justify-between items-center active:scale-95 transition-transform cursor-pointer"
                                 >
-                                    <span className="text-xl font-medium text-slate-800">{product.name}</span>
+                                    <span className="text-xl font-medium text-slate-800 dark:text-slate-100">{product.name}</span>
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-bold text-indigo-600">{item.quantity}</span>
-                                        <span className="text-sm font-medium text-indigo-400">{displayUnit}</span>
+                                        <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{item.quantity}</span>
+                                        <span className="text-sm font-medium text-primary-400 dark:text-primary-300">{displayUnit}</span>
                                     </div>
                                 </div>
                             )
@@ -165,10 +159,10 @@ const ActiveShoppingView: React.FC = () => {
 
          {/* Separator if needed */}
          {activeGroups.length > 0 && checkedGroups.length > 0 && (
-             <div className="my-8 flex items-center justify-center text-gray-300">
-                 <span className="border-t border-gray-300 w-full"></span>
+             <div className="my-8 flex items-center justify-center text-gray-300 dark:text-slate-700">
+                 <span className="border-t border-gray-300 dark:border-slate-700 w-full"></span>
                  <span className="px-4 text-sm font-medium uppercase tracking-widest">Terminé</span>
-                 <span className="border-t border-gray-300 w-full"></span>
+                 <span className="border-t border-gray-300 dark:border-slate-700 w-full"></span>
              </div>
          )}
 
@@ -176,7 +170,7 @@ const ActiveShoppingView: React.FC = () => {
          <div className="space-y-4 opacity-60 grayscale transition-all duration-500">
             {checkedGroups.map(({ category, items }) => (
                 <div key={category.id + '-checked'}>
-                    <h3 className="text-sm font-semibold text-gray-500 mb-2 pl-2">{category.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-slate-500 mb-2 pl-2">{category.name}</h3>
                      <div className="space-y-2">
                         {items.map(item => {
                              const product = products.find(p => p.id === item.productId);
@@ -185,10 +179,10 @@ const ActiveShoppingView: React.FC = () => {
                                  <div 
                                      key={item.productId}
                                      onClick={() => toggleCheck(item.productId)}
-                                     className="bg-gray-100 p-3 rounded-lg flex justify-between items-center cursor-pointer border border-transparent hover:border-gray-300"
+                                     className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg flex justify-between items-center cursor-pointer border border-transparent hover:border-gray-300 dark:hover:border-slate-600"
                                  >
-                                     <span className="text-lg line-through text-gray-500">{product.name}</span>
-                                     <RotateCcw size={16} className="text-gray-400" />
+                                     <span className="text-lg line-through text-gray-500 dark:text-slate-400">{product.name}</span>
+                                     <RotateCcw size={16} className="text-gray-400 dark:text-slate-500" />
                                  </div>
                              )
                         })}
@@ -205,7 +199,7 @@ const ActiveShoppingView: React.FC = () => {
                  <p className="text-gray-300 mb-8">Bravo, vous avez tout trouvé.</p>
                  <button 
                     onClick={() => { setShowFireworks(false); navigate('/'); }}
-                    className="bg-white text-indigo-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-indigo-50 shadow-xl transform transition hover:scale-105"
+                    className="bg-white text-primary-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-primary-50 shadow-xl transform transition hover:scale-105"
                  >
                     OK
                  </button>

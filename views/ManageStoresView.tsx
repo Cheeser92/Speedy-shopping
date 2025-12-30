@@ -11,22 +11,16 @@ const ManageStoresView: React.FC = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
 
-  // Delete Confirmation State
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
-
-  // Favorite Confirmation State
   const [favConfirm, setFavConfirm] = useState<{id: string, name: string} | null>(null);
 
-  // Drag & Drop State
   const dragItem = useRef<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
 
   const selectedStore = stores.find(s => s.id === selectedStoreId);
 
-  // Categories present in the store config
   const activeCategories = selectedStore ? selectedStore.categoryOrder.map(id => categories.find(c => c.id === id)).filter(Boolean) as typeof categories : [];
   
-  // Categories NOT in the store config
   const availableCategories = selectedStore ? categories.filter(c => !selectedStore.categoryOrder.includes(c.id)) : [];
 
   const handleCreate = () => {
@@ -40,8 +34,6 @@ const ManageStoresView: React.FC = () => {
   const handleReorder = (fromIndex: number, toIndex: number) => {
       if (!selectedStore) return;
       const newOrder = [...selectedStore.categoryOrder];
-      // Note: activeCategories represents the *filtered* list (valid IDs). 
-      // We must operate on the real ID list, but assuming data integrity:
       const itemToMove = newOrder[fromIndex];
       newOrder.splice(fromIndex, 1);
       newOrder.splice(toIndex, 0, itemToMove);
@@ -69,7 +61,6 @@ const ManageStoresView: React.FC = () => {
   const confirmDelete = () => {
     if (deleteConfirm) {
         deleteStore(deleteConfirm.id);
-        // If we deleted the selected store, select another one or reset
         if (selectedStoreId === deleteConfirm.id) {
              const remaining = stores.filter(s => s.id !== deleteConfirm.id);
              setSelectedStoreId(remaining[0]?.id || '');
@@ -86,18 +77,13 @@ const ManageStoresView: React.FC = () => {
   };
 
   // --- Drag & Drop Handlers ---
-
-  // Desktop (Mouse)
   const onDragStart = (e: React.DragEvent, index: number) => {
       dragItem.current = index;
       setDraggingIndex(index);
-      // Create a clean drag image
       e.dataTransfer.effectAllowed = "move";
-      // Optional: set ghost image if needed, but browser default is usually ok
   };
 
   const onDragEnter = (e: React.DragEvent, index: number) => {
-      // If we are over a different item than the one we are dragging, swap them
       if (dragItem.current !== null && dragItem.current !== index) {
           handleReorder(dragItem.current, index);
           dragItem.current = index;
@@ -110,18 +96,13 @@ const ManageStoresView: React.FC = () => {
       setDraggingIndex(null);
   };
 
-  // Mobile (Touch)
   const onTouchStart = (index: number) => {
       dragItem.current = index;
       setDraggingIndex(index);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
-      // Prevent scrolling while reordering
       if (dragItem.current === null) return;
-      // Note: We don't preventDefault globally, only on the handle which calls this.
-      // But to prevent scroll OF THE PAGE while dragging, we need to be careful.
-      // e.preventDefault() here stops scroll if the event is passive: false (which React handles for us usually).
       
       const touch = e.touches[0];
       const element = document.elementFromPoint(touch.clientX, touch.clientY);
@@ -144,23 +125,23 @@ const ManageStoresView: React.FC = () => {
 
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-gray-50 flex flex-col h-screen">
-      <h1 className="text-2xl font-bold text-slate-800 mb-4">Magasins</h1>
+    <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
+      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Magasins</h1>
       
       {/* Store Selector & Actions */}
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 mb-4">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 mb-4 transition-colors">
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
             {stores.map(s => (
                 <button 
                     key={s.id} 
                     onClick={() => setSelectedStoreId(s.id)}
-                    className={`flex items-center whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${selectedStoreId === s.id ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'}`}
+                    className={`flex items-center whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${selectedStoreId === s.id ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
                 >
                     {s.name}
                     {s.isFavorite && <Star size={12} fill="currentColor" className="ml-2 text-yellow-300" />}
                 </button>
             ))}
-            <button onClick={() => setIsCreating(true)} className="px-3 py-2 rounded-full border border-dashed border-indigo-400 text-indigo-500 hover:bg-indigo-50">+</button>
+            <button onClick={() => setIsCreating(true)} className="px-3 py-2 rounded-full border border-dashed border-primary-400 text-primary-500 hover:bg-primary-50 dark:hover:bg-slate-800">+</button>
         </div>
         
         {isCreating && (
@@ -168,24 +149,24 @@ const ManageStoresView: React.FC = () => {
                 <input 
                     type="text" 
                     placeholder="Nom du magasin" 
-                    className="flex-1 p-2 border rounded-lg bg-indigo-50 text-indigo-900 placeholder-indigo-300" 
+                    className="flex-1 p-2 border rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 border-gray-200 dark:border-slate-600" 
                     value={newStoreName}
                     onChange={e => setNewStoreName(e.target.value)}
                 />
                 <button onClick={handleCreate} className="bg-green-500 text-white px-3 rounded-lg">OK</button>
-                <button onClick={() => setIsCreating(false)} className="text-gray-500 px-2">X</button>
+                <button onClick={() => setIsCreating(false)} className="text-gray-500 dark:text-gray-400 px-2">X</button>
             </div>
         )}
 
         {selectedStore && (
-            <div className="flex justify-between items-center border-t border-gray-100 pt-3">
+            <div className="flex justify-between items-center border-t border-gray-100 dark:border-slate-800 pt-3">
                 <button 
                     onClick={() => {
                        if(!selectedStore.isFavorite) {
                            setFavConfirm({id: selectedStore.id, name: selectedStore.name});
                        }
                     }}
-                    className={`flex items-center gap-2 text-sm font-medium ${selectedStore.isFavorite ? 'text-yellow-500 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+                    className={`flex items-center gap-2 text-sm font-medium ${selectedStore.isFavorite ? 'text-yellow-500 cursor-default' : 'text-gray-400 dark:text-slate-500 hover:text-yellow-500'}`}
                 >
                     <Star size={18} fill={selectedStore.isFavorite ? "currentColor" : "none"} /> 
                     {selectedStore.isFavorite ? 'Magasin favori' : 'Définir comme favori'}
@@ -193,7 +174,7 @@ const ManageStoresView: React.FC = () => {
                 {!selectedStore.isFavorite && (
                     <button 
                         onClick={() => setDeleteConfirm({id: selectedStore.id, name: selectedStore.name})}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-500 hover:text-red-700 dark:hover:text-red-400"
                     >
                         <Trash2 size={18} />
                     </button>
@@ -206,13 +187,13 @@ const ManageStoresView: React.FC = () => {
       {selectedStore && (
         <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-2">
-                 <h2 className="font-semibold text-gray-700">Ordre des rayons ({activeCategories.length})</h2>
+                 <h2 className="font-semibold text-gray-700 dark:text-slate-300">Ordre des rayons ({activeCategories.length})</h2>
                  {availableCategories.length > 0 && (
                      <div className="relative group">
-                         <button className="text-sm text-indigo-600 font-medium flex items-center">+ Ajouter rayon</button>
-                         <div className="absolute right-0 mt-2 w-48 bg-white shadow-xl rounded-lg border p-1 hidden group-hover:block z-10 max-h-48 overflow-y-auto">
+                         <button className="text-sm text-primary-600 dark:text-primary-400 font-medium flex items-center">+ Ajouter rayon</button>
+                         <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 shadow-xl rounded-lg border dark:border-slate-700 p-1 hidden group-hover:block z-10 max-h-48 overflow-y-auto">
                              {availableCategories.map(c => (
-                                 <button key={c.id} onClick={() => addCategoryToStore(c.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm">
+                                 <button key={c.id} onClick={() => addCategoryToStore(c.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-slate-700 dark:text-slate-200">
                                      {c.name}
                                  </button>
                              ))}
@@ -221,7 +202,7 @@ const ManageStoresView: React.FC = () => {
                  )}
             </div>
             
-            <div className="flex-1 overflow-y-auto bg-white rounded-xl shadow-inner border border-gray-200 p-2 space-y-2">
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 rounded-xl shadow-inner border border-gray-200 dark:border-slate-800 p-2 space-y-2">
                 {activeCategories.map((cat, index) => (
                     <div 
                         key={cat.id} 
@@ -231,12 +212,12 @@ const ManageStoresView: React.FC = () => {
                         onDragEnd={onDragEnd}
                         onDragOver={(e) => e.preventDefault()}
                         data-sortable-index={index}
-                        className={`flex items-center justify-between p-2 rounded-lg border transition-all duration-200 ${draggingIndex === index ? 'bg-indigo-50 border-indigo-300 opacity-50 scale-95 shadow-inner' : 'bg-gray-50 border-gray-100 hover:border-indigo-200'}`}
+                        className={`flex items-center justify-between p-2 rounded-lg border transition-all duration-200 ${draggingIndex === index ? 'bg-primary-50 dark:bg-slate-800 border-primary-300 dark:border-primary-500 opacity-50 scale-95 shadow-inner' : 'bg-gray-50 dark:bg-slate-800 border-gray-100 dark:border-slate-700 hover:border-primary-200 dark:hover:border-primary-800'}`}
                     >
                         <div className="flex items-center gap-3">
                             {/* Drag Handle */}
                             <div 
-                                className="text-gray-300 cursor-grab active:cursor-grabbing touch-none p-1 hover:text-indigo-400"
+                                className="text-gray-300 dark:text-slate-600 cursor-grab active:cursor-grabbing touch-none p-1 hover:text-primary-400"
                                 onTouchStart={() => onTouchStart(index)}
                                 onTouchMove={onTouchMove}
                                 onTouchEnd={onTouchEnd}
@@ -244,12 +225,12 @@ const ManageStoresView: React.FC = () => {
                                 <GripVertical size={20} />
                             </div>
                             
-                            <IconComponent name={cat.iconName} size={18} className="text-gray-500" />
-                            <span className="font-medium text-slate-700">{cat.name}</span>
+                            <IconComponent name={cat.iconName} size={18} className="text-gray-500 dark:text-slate-400" />
+                            <span className="font-medium text-slate-700 dark:text-slate-200">{cat.name}</span>
                         </div>
                         <div className="flex items-center gap-1">
-                            <button onClick={() => moveCategory(index, 'up')} disabled={index === 0} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 text-gray-400 hover:text-indigo-600"><ArrowUp size={16}/></button>
-                            <button onClick={() => moveCategory(index, 'down')} disabled={index === activeCategories.length - 1} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30 text-gray-400 hover:text-indigo-600"><ArrowDown size={16}/></button>
+                            <button onClick={() => moveCategory(index, 'up')} disabled={index === 0} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded disabled:opacity-30 text-gray-400 dark:text-slate-500 hover:text-primary-600"><ArrowUp size={16}/></button>
+                            <button onClick={() => moveCategory(index, 'down')} disabled={index === activeCategories.length - 1} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded disabled:opacity-30 text-gray-400 dark:text-slate-500 hover:text-primary-600"><ArrowDown size={16}/></button>
                             <button onClick={() => removeCategoryFromStore(cat.id)} className="p-1 text-red-500 hover:text-red-700 ml-2"><Trash2 size={16}/></button>
                         </div>
                     </div>
@@ -261,20 +242,20 @@ const ManageStoresView: React.FC = () => {
       {/* Delete Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
             <div className="flex flex-col items-center text-center mb-4">
-               <div className="bg-red-100 p-3 rounded-full mb-3 text-red-500">
+               <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800">Supprimer le magasin ?</h3>
-               <p className="text-gray-600 mt-2">
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer le magasin ?</h3>
+               <p className="text-gray-600 dark:text-slate-300 mt-2">
                  Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
               <button 
                 onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Annuler
               </button>
@@ -292,20 +273,20 @@ const ManageStoresView: React.FC = () => {
       {/* Favorite Confirmation Modal */}
       {favConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
             <div className="flex flex-col items-center text-center mb-4">
-               <div className="bg-yellow-100 p-3 rounded-full mb-3 text-yellow-600">
+               <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full mb-3 text-yellow-600 dark:text-yellow-500">
                   <Star size={32} fill="currentColor" />
                </div>
-               <h3 className="text-lg font-bold text-slate-800">Changer de magasin favori ?</h3>
-               <p className="text-gray-600 mt-2">
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Changer de magasin favori ?</h3>
+               <p className="text-gray-600 dark:text-slate-300 mt-2">
                  Voulez-vous définir <span className="font-semibold">"{favConfirm.name}"</span> comme magasin principal pour vos listes ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
               <button 
                 onClick={() => setFavConfirm(null)}
-                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
                 Annuler
               </button>

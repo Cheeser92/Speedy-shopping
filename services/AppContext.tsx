@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS } from '../constants';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize } from '../types';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES } from '../constants';
 
 interface AppState {
   categories: Category[];
@@ -9,12 +9,15 @@ interface AppState {
   stores: Store[];
   shoppingLists: ShoppingList[];
   units: string[];
+  darkMode: boolean;
+  themeColor: ThemeColor;
+  fontSize: AppFontSize;
 }
 
 interface AppContextType extends AppState {
   addCategory: (name: string, iconName: string) => void;
   updateCategory: (id: string, name: string, iconName: string) => void;
-  deleteCategory: (id: string) => void; // Added
+  deleteCategory: (id: string) => void;
   addProduct: (product: Omit<Product, 'id' | 'priceHistory'>) => string;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
@@ -26,10 +29,12 @@ interface AppContextType extends AppState {
   updateShoppingList: (list: ShoppingList) => void;
   deleteShoppingList: (id: string) => void;
   duplicateShoppingList: (id: string) => void;
-  // Unit Management
   addUnit: (unit: string) => void;
   updateUnit: (oldUnit: string, newUnit: string) => void;
   deleteUnit: (unit: string) => void;
+  toggleDarkMode: () => void;
+  setThemeColor: (color: ThemeColor) => void;
+  setFontSize: (size: AppFontSize) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -43,6 +48,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stores, setStores] = useState<Store[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [units, setUnits] = useState<string[]>([]);
+  const [darkMode, setDarkMode] = useState(false);
+  const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
+  const [fontSize, setFontSize] = useState<AppFontSize>('medium');
   const [loaded, setLoaded] = useState(false);
 
   // Load data from localStorage or init defaults
@@ -52,6 +60,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedStores = localStorage.getItem('stores');
     const savedLists = localStorage.getItem('shoppingLists');
     const savedUnits = localStorage.getItem('units');
+    const savedDarkMode = localStorage.getItem('darkMode');
+    const savedThemeColor = localStorage.getItem('themeColor');
+    const savedFontSize = localStorage.getItem('fontSize');
 
     let initialCategories: Category[] = [];
 
@@ -68,7 +79,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedStores) {
       setStores(JSON.parse(savedStores));
     } else {
-      // Default stores init with all categories sorted alphabetically
       const sortedDefaultCatIds = [...initialCategories]
         .sort((a, b) => a.name.localeCompare(b.name))
         .map(c => c.id);
@@ -85,12 +95,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedLists) setShoppingLists(JSON.parse(savedLists));
 
     if (savedUnits) {
-        // Merge saved units with default units to ensure new defaults (like sachet) appear for existing users
         const parsedSavedUnits: string[] = JSON.parse(savedUnits);
         const mergedUnits = Array.from(new Set([...parsedSavedUnits, ...DEFAULT_UNITS]));
         setUnits(mergedUnits);
     } else {
         setUnits(DEFAULT_UNITS);
+    }
+
+    if (savedDarkMode) {
+      setDarkMode(JSON.parse(savedDarkMode));
+    }
+
+    if (savedThemeColor) {
+        setThemeColor(savedThemeColor as ThemeColor);
+    }
+
+    if (savedFontSize) {
+        setFontSize(savedFontSize as AppFontSize);
     }
     
     setLoaded(true);
@@ -104,17 +125,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('stores', JSON.stringify(stores));
       localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
       localStorage.setItem('units', JSON.stringify(units));
+      localStorage.setItem('darkMode', JSON.stringify(darkMode));
+      localStorage.setItem('themeColor', themeColor);
+      localStorage.setItem('fontSize', fontSize);
     }
-  }, [categories, products, stores, shoppingLists, units, loaded]);
+  }, [categories, products, stores, shoppingLists, units, darkMode, themeColor, fontSize, loaded]);
+
+  // Apply Dark Mode Class
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Apply CSS Variables for Theme
+  useEffect(() => {
+    const palette = THEME_PALETTES[themeColor];
+    const root = document.documentElement;
+    Object.entries(palette).forEach(([shade, value]) => {
+        root.style.setProperty(`--color-primary-${shade}`, value as string);
+    });
+  }, [themeColor]);
 
   // Sort categories alphabetically for display
   const sortedCategories = useMemo(() => {
     return [...categories].sort((a, b) => a.name.localeCompare(b.name));
   }, [categories]);
 
-  // Sort units alphabetically for display (Case insensitive, keeps 'Aucune' at top)
+  // Sort units alphabetically for display
   const sortedUnits = useMemo(() => {
-    return [...units].sort((a, b) => {
+    return [...units].sort((a: string, b: string) => {
         if (a === 'Aucune') return -1;
         if (b === 'Aucune') return 1;
         return a.localeCompare(b, 'fr', { sensitivity: 'base' });
@@ -124,7 +166,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addCategory = (name: string, iconName: string) => {
     const newCat: Category = { id: generateId(), name, iconName };
     setCategories(prev => [...prev, newCat]);
-    // Add to all stores at the end
     setStores(prev => prev.map(s => ({...s, categoryOrder: [...s.categoryOrder, newCat.id]})));
   };
 
@@ -134,7 +175,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteCategory = (id: string) => {
     setCategories(prev => prev.filter(c => c.id !== id));
-    // Also remove this category from all stores' categoryOrder
     setStores(prev => prev.map(s => ({
         ...s,
         categoryOrder: s.categoryOrder.filter(cId => cId !== id)
@@ -156,7 +196,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(prev => prev.map(p => {
       if (p.id === updated.id) {
         const history = [...p.priceHistory];
-        // If price changed, add to history
         if (p.defaultPrice !== updated.defaultPrice) {
           history.push({ date: getTodayDate(), price: updated.defaultPrice });
         }
@@ -171,7 +210,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addStore = (name: string) => {
-    // Generate category order sorted alphabetically for the new store
     const sortedCatIds = [...categories]
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(c => c.id);
@@ -194,8 +232,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const toggleFavoriteStore = (id: string) => {
-    if (stores.find(s => s.id === id)?.isFavorite) return; // Already fav
-    // Confirmation handled in view now
+    if (stores.find(s => s.id === id)?.isFavorite) return;
     setStores(prev => prev.map(s => ({ ...s, isFavorite: s.id === id })));
   };
 
@@ -226,13 +263,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: generateId(),
         name: `${list.name} (Copie)`,
         createdAt: getTodayDate(),
-        items: list.items.map(i => ({...i, isChecked: false})) // Uncheck items on copy
+        items: list.items.map(i => ({...i, isChecked: false}))
       };
       setShoppingLists(prev => [newList, ...prev]);
     }
   };
 
-  // Unit Management
   const addUnit = (unit: string) => {
     const trimmed = unit.trim();
     if(trimmed && !units.some(u => u.toLowerCase() === trimmed.toLowerCase())) {
@@ -248,17 +284,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUnits(prev => prev.filter(u => u !== unit));
   };
 
+  const toggleDarkMode = () => {
+    setDarkMode(prev => !prev);
+  };
 
   return (
     <AppContext.Provider value={{
       categories: sortedCategories,
       products, stores, shoppingLists, 
-      units: sortedUnits, // Return sorted units
+      units: sortedUnits,
+      darkMode, themeColor, fontSize,
       addCategory, updateCategory, deleteCategory,
       addProduct, updateProduct, deleteProduct,
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
-      addUnit, updateUnit, deleteUnit
+      addUnit, updateUnit, deleteUnit,
+      toggleDarkMode, setThemeColor, setFontSize
     }}>
       {children}
     </AppContext.Provider>

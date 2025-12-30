@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
   <head>
@@ -5,7 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ShopFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        darkMode: 'class',
+        theme: {
+          extend: {
+            colors: {
+              primary: {
+                50: 'var(--color-primary-50)',
+                100: 'var(--color-primary-100)',
+                200: 'var(--color-primary-200)',
+                300: 'var(--color-primary-300)',
+                400: 'var(--color-primary-400)',
+                500: 'var(--color-primary-500)',
+                600: 'var(--color-primary-600)',
+                700: 'var(--color-primary-700)',
+                800: 'var(--color-primary-800)',
+                900: 'var(--color-primary-900)',
+                950: 'var(--color-primary-950)',
+              }
+            }
+          }
+        }
+      }
+    </script>
     <style>
+      /* Smooth transition for font size changes */
+      html {
+        transition: font-size 0.3s ease-in-out;
+      }
+
       /* Simple animation for completion */
       @keyframes pop {
         0% { transform: scale(0.5); opacity: 0; }
@@ -16,9 +46,9 @@
         animation: pop 0.5s ease-out forwards;
       }
       
-      /* Force inputs to be at least 16px to prevent iOS zoom on focus */
+      /* Force inputs to be at least 16px to prevent iOS zoom on focus, but allow scaling up */
       input, select, textarea {
-        font-size: 16px !important; 
+        font-size: max(16px, 1rem); 
       }
     </style>
   <script type="importmap">
@@ -33,7 +63,7 @@
 }
 </script>
 </head>
-  <body class="bg-gray-50 text-slate-800">
+  <body class="bg-gray-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 transition-colors duration-300">
     <div id="root"></div>
   </body>
 </html>

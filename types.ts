@@ -41,3 +41,6 @@ export interface ShoppingList {
   storeId?: string;
   items: ShoppingListItem[];
 }
+
+export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
+export type AppFontSize = 'small' | 'medium' | 'large' | 'xl';
