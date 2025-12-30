@@ -127,11 +127,18 @@ const ActiveShoppingView: React.FC = () => {
          
          {/* Active Items */}
          <div className="space-y-6">
-            {activeGroups.map(({ category, items }) => (
+            {activeGroups.map(({ category, items }) => {
+                const categoryTotal = items.reduce((acc, item) => {
+                    const product = products.find(p => p.id === item.productId);
+                    return acc + (item.quantity * (product?.defaultPrice || 0));
+                }, 0).toFixed(2);
+                
+                return (
                 <div key={category.id}>
                     <h3 className="flex items-center gap-2 text-xl font-bold text-primary-700 dark:text-primary-400 mb-3 border-b-2 border-primary-100 dark:border-slate-800 pb-1">
                         <IconComponent name={category.iconName} size={28} />
                         {category.name}
+                        <span className="ml-auto text-sm bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full">{categoryTotal} €</span>
                     </h3>
                     <div className="space-y-3">
                         {items.map(item => {
@@ -154,7 +161,7 @@ const ActiveShoppingView: React.FC = () => {
                         })}
                     </div>
                 </div>
-            ))}
+            )})}
          </div>
 
          {/* Separator if needed */}

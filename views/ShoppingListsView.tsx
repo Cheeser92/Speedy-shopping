@@ -1,11 +1,11 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ShoppingListsView: React.FC = () => {
-  const { shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList } = useAppContext();
+  const { shoppingLists, products, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList } = useAppContext();
   const [isCreating, setIsCreating] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -44,6 +44,13 @@ const ShoppingListsView: React.FC = () => {
       deleteShoppingList(deleteConfirm.id);
       setDeleteConfirm(null);
     }
+  };
+
+  const calculateListTotal = (items: typeof shoppingLists[0]['items']) => {
+    return items.reduce((acc, item) => {
+      const product = products.find(p => p.id === item.productId);
+      return acc + (item.quantity * (product?.defaultPrice || 0));
+    }, 0).toFixed(2);
   };
 
   return (
@@ -101,11 +108,18 @@ const ShoppingListsView: React.FC = () => {
                 <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => navigate(`/list/${list.id}`)}>
                   <div>
                     <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">{list.name}</h2>
-                    <div className="flex items-center text-xs text-gray-500 dark:text-slate-400 mt-1 space-x-3">
-                      <span className="flex items-center"><Calendar size={12} className="mr-1" /> {list.createdAt}</span>
-                      <span className="flex items-center bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2 py-0.5 rounded-full font-medium">
-                        <ShoppingBag size={12} className="mr-1" /> {list.items.length} produits
+                    <div className="flex flex-wrap items-center gap-2 mt-2">
+                      <span className="flex items-center text-xs text-gray-500 dark:text-slate-400">
+                        <Calendar size={12} className="mr-1" /> {list.createdAt}
                       </span>
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2 py-0.5 rounded-full font-medium text-xs">
+                            <ShoppingBag size={12} className="mr-1" /> {list.items.length}
+                        </span>
+                        <span className="flex items-center bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full font-medium text-xs">
+                            <Euro size={12} className="mr-1" /> {calculateListTotal(list.items)}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>

@@ -202,7 +202,13 @@ const ListDetailView: React.FC = () => {
             <p className="text-sm">Ajoutez des produits ci-dessous.</p>
           </div>
         ) : (
-          organizedItems.map(({ category, items }) => (
+          organizedItems.map(({ category, items }) => {
+            const categoryTotal = items.reduce((acc, item) => {
+                const product = products.find(p => p.id === item.productId);
+                return acc + (item.quantity * (product?.defaultPrice || 0));
+            }, 0).toFixed(2);
+
+            return (
             <div key={category.id} className="mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
               <div 
                 onClick={() => toggleCatCollapse(category.id)}
@@ -211,7 +217,10 @@ const ListDetailView: React.FC = () => {
                 <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold">
                   <IconComponent name={category.iconName} size={18} className="text-primary-500 dark:text-primary-400" />
                   {category.name}
-                  <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{items.length}</span>
+                  <div className="flex gap-2 ml-1">
+                    <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{items.length}</span>
+                    <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{categoryTotal} €</span>
+                  </div>
                 </div>
                 <div className="text-gray-500 dark:text-slate-400">
                   {collapsedCats.includes(category.id) ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
@@ -272,7 +281,8 @@ const ListDetailView: React.FC = () => {
                 </div>
               )}
             </div>
-          ))
+            );
+          })
         )}
       </div>
 
