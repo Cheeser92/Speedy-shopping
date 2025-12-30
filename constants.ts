@@ -119,6 +119,5 @@ export const THEME_DISPLAY_DATA: Record<ThemeColor, { label: string, color: stri
 export const FONT_SIZES: Record<AppFontSize, { label: string, value: string }> = {
   small: { label: 'Petite', value: '87.5%' },   // ~14px
   medium: { label: 'Moyenne', value: '100%' },  // 16px
-  large: { label: 'Grande', value: '112.5%' },  // ~18px
-  xl: { label: 'Très grande', value: '125%' }   // 20px
+  large: { label: 'Grande', value: '115%' }     // ~18.4px
 };

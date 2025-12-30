@@ -191,7 +191,7 @@ const ManageArticlesView: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Articles</h1>
             <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-                <Plus size={18} className="mr-1" /> Nouvel Article
+                <Plus size={18} className="mr-1" /> Article
             </button>
         </div>
         <div className="relative">
@@ -336,4 +336,3 @@ const ManageArticlesView: React.FC = () => {
 };
 
 export default ManageArticlesView;
-    

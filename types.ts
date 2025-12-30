@@ -43,7 +43,7 @@ export interface ShoppingList {
 }
 
 export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
-export type AppFontSize = 'small' | 'medium' | 'large' | 'xl';
+export type AppFontSize = 'small' | 'medium' | 'large';
 
 export interface BackupData {
   version: number;

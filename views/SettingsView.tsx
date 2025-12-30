@@ -190,7 +190,7 @@ const SettingsView: React.FC = () => {
                 </div>
              </div>
              
-             <div className="grid grid-cols-4 gap-3">
+             <div className="grid grid-cols-3 gap-3">
                 {(Object.entries(FONT_SIZES) as [AppFontSize, typeof FONT_SIZES[AppFontSize]][]).map(([key, data]) => (
                     <button
                         key={key}
@@ -198,7 +198,7 @@ const SettingsView: React.FC = () => {
                         className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${fontSize === key ? 'bg-primary-50 dark:bg-slate-800 border-primary-500 dark:border-primary-400 shadow-sm' : 'border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
                     >
                         <span 
-                            className={`font-bold text-slate-700 dark:text-slate-200 mb-1 ${key === 'small' ? 'text-xs' : key === 'medium' ? 'text-base' : key === 'large' ? 'text-lg' : 'text-xl'}`}
+                            className={`font-bold text-slate-700 dark:text-slate-200 mb-1 ${key === 'small' ? 'text-xs' : key === 'medium' ? 'text-base' : 'text-lg'}`}
                         >
                             Aa
                         </span>
@@ -328,4 +328,3 @@ const SettingsView: React.FC = () => {
   );
 };
 export default SettingsView;
-    

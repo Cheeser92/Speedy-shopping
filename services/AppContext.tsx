@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES } from '../constants';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES } from '../constants';
 
 interface AppState {
   categories: Category[];
@@ -112,7 +112,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (savedFontSize) {
-        setFontSize(savedFontSize as AppFontSize);
+        // Validate if the saved font size still exists in our constants
+        // This prevents crashes if we remove an option (like 'xl') that a user had selected
+        if (Object.keys(FONT_SIZES).includes(savedFontSize)) {
+            setFontSize(savedFontSize as AppFontSize);
+        } else {
+            setFontSize('medium');
+        }
     }
     
     setLoaded(true);

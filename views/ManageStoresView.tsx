@@ -3,7 +3,7 @@ import React, { useState, useRef } from 'react';
 import { useAppContext } from '../services/AppContext';
 import { Store } from '../types';
 import { IconComponent } from '../components/IconComponent';
-import { Star, Trash2, ArrowUp, ArrowDown, AlertTriangle, GripVertical } from 'lucide-react';
+import { Star, Trash2, ArrowUp, ArrowDown, AlertTriangle, GripVertical, Plus } from 'lucide-react';
 
 const ManageStoresView: React.FC = () => {
   const { 
@@ -145,7 +145,13 @@ const ManageStoresView: React.FC = () => {
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
-      <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm mb-4">Magasins</h1>
+      
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Magasins</h1>
+         <button onClick={() => setIsCreating(true)} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
+            <Plus size={18} className="mr-1" /> Magasin
+         </button>
+      </div>
       
       {/* Store Selector & Actions */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 mb-4 transition-colors">
@@ -170,7 +176,6 @@ const ManageStoresView: React.FC = () => {
                     )}
                 </div>
             ))}
-            <button onClick={() => setIsCreating(true)} className="px-3 py-2 rounded-full border border-dashed border-primary-400 text-primary-500 hover:bg-primary-50 dark:hover:bg-slate-800 flex-shrink-0 flex items-center justify-center h-[42px] w-[42px]">+</button>
         </div>
         
         {isCreating && (
@@ -181,6 +186,7 @@ const ManageStoresView: React.FC = () => {
                     className="flex-1 p-2 border rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 border-gray-200 dark:border-slate-600" 
                     value={newStoreName}
                     onChange={e => setNewStoreName(e.target.value)}
+                    autoFocus
                 />
                 <button onClick={handleCreate} className="bg-green-500 text-white px-3 rounded-lg">OK</button>
                 <button onClick={() => setIsCreating(false)} className="text-gray-500 dark:text-gray-400 px-2">X</button>
@@ -200,7 +206,6 @@ const ManageStoresView: React.FC = () => {
                     <Star size={18} fill={selectedStore.isFavorite ? "currentColor" : "none"} /> 
                     {selectedStore.isFavorite ? 'Magasin favori' : 'Définir comme favori'}
                 </button>
-                {/* L'ancien bouton poubelle a été retiré d'ici car il est maintenant dans la liste horizontale */}
             </div>
         )}
       </div>
@@ -340,4 +345,3 @@ const ManageStoresView: React.FC = () => {
 };
 
 export default ManageStoresView;
-    

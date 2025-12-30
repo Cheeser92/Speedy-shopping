@@ -68,7 +68,7 @@ const ShoppingListsView: React.FC = () => {
             onClick={() => setIsCreating(true)}
             className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600 font-medium transition-colors"
         >
-            <Plus size={20} className="mr-1" /> Nouvelle liste
+            <Plus size={20} className="mr-1" /> Liste
         </button>
       </div>
 
@@ -205,4 +205,3 @@ const ShoppingListsView: React.FC = () => {
 };
 
 export default ShoppingListsView;
-    
