@@ -1,0 +1,20 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="blueGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3b82f6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1d4ed8;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#blueGrad)"/>
+  
+  <!-- Motion Lines (Speedy effect) -->
+  <path d="M40 280h70a10 10 0 0 0 0-20H40a10 10 0 0 0 0 20zm-20-70h90a10 10 0 0 0 0-20H20a10 10 0 0 0 0 20zm50-70h50a10 10 0 0 0 0-20H70a10 10 0 0 0 0 20z" fill="white" opacity="0.5"/>
+  
+  <!-- Cart Body -->
+  <path d="M165 130h-45c-11 0-20 9-20 20s9 20 20 20h30l28 140c3 15 16 26 31 26h176c11 0 20-9 20-20s-9-20-20-20H209l-6-30h167c22 0 42-16 46-38l25-115c2-10-6-19-16-19H195l-12-38c-3-10-12-17-23-17h-50" fill="white"/>
+  
+  <!-- Wheels -->
+  <circle cx="220" cy="390" r="35" fill="white"/>
+  <circle cx="375" cy="390" r="35" fill="white"/>
+</svg>

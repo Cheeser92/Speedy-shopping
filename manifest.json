@@ -1,0 +1,17 @@
+
+{
+  "name": "Speedy shopping",
+  "short_name": "Speedy",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "description": "Une application intelligente de gestion de listes de courses.",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
