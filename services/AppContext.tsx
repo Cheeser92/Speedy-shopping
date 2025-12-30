@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize } from '../types';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES } from '../constants';
 
 interface AppState {
@@ -35,6 +35,7 @@ interface AppContextType extends AppState {
   toggleDarkMode: () => void;
   setThemeColor: (color: ThemeColor) => void;
   setFontSize: (size: AppFontSize) => void;
+  importData: (data: BackupData) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -288,6 +289,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setDarkMode(prev => !prev);
   };
 
+  const importData = (data: BackupData) => {
+      // Validation basique
+      if (!data.categories || !data.products || !data.stores || !data.shoppingLists) {
+          throw new Error("Format de fichier invalide");
+      }
+
+      // Mise à jour de l'état React (ceci déclenchera automatiquement la sauvegarde dans localStorage via le useEffect)
+      // Cela permet d'éviter de recharger la page
+      setCategories(data.categories);
+      setProducts(data.products);
+      setStores(data.stores);
+      setShoppingLists(data.shoppingLists);
+      
+      // Gestion des unités (compatibilité)
+      if(data.units) {
+          setUnits(data.units);
+      } else {
+          setUnits(DEFAULT_UNITS);
+      }
+      
+      if(data.preferences) {
+          if (data.preferences.darkMode !== undefined) setDarkMode(!!data.preferences.darkMode);
+          if (data.preferences.themeColor) setThemeColor(data.preferences.themeColor);
+          if (data.preferences.fontSize) setFontSize(data.preferences.fontSize);
+      }
+  };
+
   return (
     <AppContext.Provider value={{
       categories: sortedCategories,
@@ -299,7 +327,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
       addUnit, updateUnit, deleteUnit,
-      toggleDarkMode, setThemeColor, setFontSize
+      toggleDarkMode, setThemeColor, setFontSize,
+      importData
     }}>
       {children}
     </AppContext.Provider>

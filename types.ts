@@ -44,3 +44,18 @@ export interface ShoppingList {
 
 export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
 export type AppFontSize = 'small' | 'medium' | 'large' | 'xl';
+
+export interface BackupData {
+  version: number;
+  timestamp: string;
+  categories: Category[];
+  products: Product[];
+  stores: Store[];
+  shoppingLists: ShoppingList[];
+  units: string[];
+  preferences: {
+    darkMode: boolean;
+    themeColor: ThemeColor;
+    fontSize: AppFontSize;
+  };
+}
