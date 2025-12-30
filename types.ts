@@ -1,3 +1,4 @@
+
 export interface Category {
   id: string;
   name: string;
@@ -29,6 +30,7 @@ export interface Store {
 export interface ShoppingListItem {
   productId: string;
   quantity: number;
+  unit?: string; // The unit specific to this list item (e.g. "500 g" instead of default "1 kg")
   isChecked: boolean;
 }
 

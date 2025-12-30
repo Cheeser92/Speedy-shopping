@@ -1,3 +1,4 @@
+
 import React, { useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
@@ -17,6 +18,11 @@ const ActiveShoppingView: React.FC = () => {
   const currentStoreId = list?.storeId;
   const currentStore = stores.find(s => s.id === currentStoreId);
 
+  // Count checked items for Eraser logic
+  const checkedCount = useMemo(() => {
+      return list?.items.filter(i => i.isChecked).length || 0;
+  }, [list]);
+
   const toggleCheck = (productId: string) => {
     if (!list) return;
     const updatedItems = list.items.map(i => 
@@ -32,12 +38,15 @@ const ActiveShoppingView: React.FC = () => {
     updateShoppingList({ ...list, items: updatedItems });
   };
 
-  const clearChecked = () => {
-    if (!list) return;
-    if(window.confirm("Supprimer définitivement les articles barrés ?")) {
-        const remainingItems = list.items.filter(i => !i.isChecked);
-        updateShoppingList({ ...list, items: remainingItems });
-    }
+  const clearChecked = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!list || checkedCount === 0) return;
+
+    // Suppression instantanée sans confirmation
+    const remainingItems = list.items.filter(i => !i.isChecked);
+    updateShoppingList({ ...list, items: remainingItems });
   };
 
   // Grouping logic (similar to Detail view but strictly separating Checked items)
@@ -80,9 +89,9 @@ const ActiveShoppingView: React.FC = () => {
   // Progress
   const progress = useMemo(() => {
      if(!list || list.items.length === 0) return 0;
-     const checked = list.items.filter(i => i.isChecked).length;
+     const checked = checkedCount;
      return Math.round((checked / list.items.length) * 100);
-  }, [list]);
+  }, [list, checkedCount]);
   
   const itemsRemaining = list ? list.items.filter(i => !i.isChecked).length : 0;
 
@@ -92,23 +101,29 @@ const ActiveShoppingView: React.FC = () => {
   return (
     <div className="flex flex-col h-screen bg-gray-50 relative overflow-hidden">
       {/* Immersive Header */}
-      <div className="bg-white p-4 shadow-md flex justify-between items-center z-20">
+      <div className="bg-white p-4 shadow-md flex justify-between items-center z-20 gap-3">
         <button onClick={() => navigate(-1)} className="p-2 bg-gray-100 rounded-full hover:bg-gray-200">
            <ArrowLeft size={24} className="text-gray-700"/>
         </button>
-        <div className="flex-1 px-4">
-             {/* Progress Bar */}
-             <div className="h-4 bg-gray-200 rounded-full overflow-hidden relative">
+        <div className="flex-1">
+             {/* Progress Bar - Thicker */}
+             <div className="h-6 bg-gray-200 rounded-full overflow-hidden relative shadow-inner">
                  <div 
                     className="h-full bg-gradient-to-r from-green-400 to-green-600 transition-all duration-500 ease-out"
                     style={{ width: `${progress}%` }}
                  />
-                 <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                 <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 drop-shadow-sm">
                     {itemsRemaining === 0 ? 'Terminé !' : `${itemsRemaining} restant(s)`}
                  </span>
              </div>
         </div>
-        <button onClick={clearChecked} className="p-2 bg-red-50 text-red-500 rounded-full hover:bg-red-100" title="Effacer les articles barrés">
+        <button 
+            type="button"
+            onClick={clearChecked} 
+            disabled={checkedCount === 0}
+            className={`p-2 rounded-full transition-colors ${checkedCount > 0 ? 'bg-red-50 text-red-500 hover:bg-red-100' : 'bg-gray-100 text-gray-300 cursor-not-allowed'}`} 
+            title="Effacer les articles barrés"
+        >
            <Eraser size={24} />
         </button>
       </div>
@@ -128,6 +143,7 @@ const ActiveShoppingView: React.FC = () => {
                         {items.map(item => {
                             const product = products.find(p => p.id === item.productId);
                             if(!product) return null;
+                            const displayUnit = item.unit || product.defaultUnit;
                             return (
                                 <div 
                                     key={item.productId}
@@ -135,7 +151,10 @@ const ActiveShoppingView: React.FC = () => {
                                     className="bg-white p-4 rounded-xl shadow-md border-l-8 border-indigo-500 flex justify-between items-center active:scale-95 transition-transform cursor-pointer"
                                 >
                                     <span className="text-xl font-medium text-slate-800">{product.name}</span>
-                                    <span className="text-2xl font-bold text-indigo-600">{item.quantity > 1 ? `x${item.quantity}` : ''}</span>
+                                    <div className="flex items-baseline gap-1">
+                                        <span className="text-2xl font-bold text-indigo-600">{item.quantity}</span>
+                                        <span className="text-sm font-medium text-indigo-400">{displayUnit}</span>
+                                    </div>
                                 </div>
                             )
                         })}

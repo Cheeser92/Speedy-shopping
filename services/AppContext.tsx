@@ -1,18 +1,21 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+
+import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES } from '../constants';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS } from '../constants';
 
 interface AppState {
   categories: Category[];
   products: Product[];
   stores: Store[];
   shoppingLists: ShoppingList[];
+  units: string[];
 }
 
 interface AppContextType extends AppState {
   addCategory: (name: string, iconName: string) => void;
   updateCategory: (id: string, name: string, iconName: string) => void;
-  addProduct: (product: Omit<Product, 'id' | 'priceHistory'>) => void;
+  deleteCategory: (id: string) => void; // Added
+  addProduct: (product: Omit<Product, 'id' | 'priceHistory'>) => string;
   updateProduct: (product: Product) => void;
   deleteProduct: (id: string) => void;
   addStore: (name: string) => void;
@@ -23,6 +26,10 @@ interface AppContextType extends AppState {
   updateShoppingList: (list: ShoppingList) => void;
   deleteShoppingList: (id: string) => void;
   duplicateShoppingList: (id: string) => void;
+  // Unit Management
+  addUnit: (unit: string) => void;
+  updateUnit: (oldUnit: string, newUnit: string) => void;
+  deleteUnit: (unit: string) => void;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -35,6 +42,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
+  const [units, setUnits] = useState<string[]>([]);
   const [loaded, setLoaded] = useState(false);
 
   // Load data from localStorage or init defaults
@@ -43,6 +51,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedProducts = localStorage.getItem('products');
     const savedStores = localStorage.getItem('stores');
     const savedLists = localStorage.getItem('shoppingLists');
+    const savedUnits = localStorage.getItem('units');
 
     let initialCategories: Category[] = [];
 
@@ -59,17 +68,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (savedStores) {
       setStores(JSON.parse(savedStores));
     } else {
-      // Default stores init with all categories in default order
+      // Default stores init with all categories sorted alphabetically
+      const sortedDefaultCatIds = [...initialCategories]
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .map(c => c.id);
+
       const initialStores = DEFAULT_STORE_NAMES.map((name, index) => ({
         id: generateId(),
         name,
         isFavorite: index === 0,
-        categoryOrder: initialCategories.map(c => c.id)
+        categoryOrder: sortedDefaultCatIds
       }));
       setStores(initialStores);
     }
 
     if (savedLists) setShoppingLists(JSON.parse(savedLists));
+
+    if (savedUnits) {
+        // Merge saved units with default units to ensure new defaults (like sachet) appear for existing users
+        const parsedSavedUnits: string[] = JSON.parse(savedUnits);
+        const mergedUnits = Array.from(new Set([...parsedSavedUnits, ...DEFAULT_UNITS]));
+        setUnits(mergedUnits);
+    } else {
+        setUnits(DEFAULT_UNITS);
+    }
     
     setLoaded(true);
   }, []);
@@ -81,8 +103,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('products', JSON.stringify(products));
       localStorage.setItem('stores', JSON.stringify(stores));
       localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
+      localStorage.setItem('units', JSON.stringify(units));
     }
-  }, [categories, products, stores, shoppingLists, loaded]);
+  }, [categories, products, stores, shoppingLists, units, loaded]);
+
+  // Sort categories alphabetically for display
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
+  }, [categories]);
+
+  // Sort units alphabetically for display (Case insensitive, keeps 'Aucune' at top)
+  const sortedUnits = useMemo(() => {
+    return [...units].sort((a, b) => {
+        if (a === 'Aucune') return -1;
+        if (b === 'Aucune') return 1;
+        return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+    });
+  }, [units]);
 
   const addCategory = (name: string, iconName: string) => {
     const newCat: Category = { id: generateId(), name, iconName };
@@ -95,13 +132,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setCategories(prev => prev.map(c => c.id === id ? { ...c, name, iconName } : c));
   };
 
+  const deleteCategory = (id: string) => {
+    setCategories(prev => prev.filter(c => c.id !== id));
+    // Also remove this category from all stores' categoryOrder
+    setStores(prev => prev.map(s => ({
+        ...s,
+        categoryOrder: s.categoryOrder.filter(cId => cId !== id)
+    })));
+  };
+
   const addProduct = (productData: Omit<Product, 'id' | 'priceHistory'>) => {
+    const newId = generateId();
     const newProduct: Product = {
       ...productData,
-      id: generateId(),
+      id: newId,
       priceHistory: [{ date: getTodayDate(), price: productData.defaultPrice }]
     };
     setProducts(prev => [...prev, newProduct]);
+    return newId;
   };
 
   const updateProduct = (updated: Product) => {
@@ -123,11 +171,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addStore = (name: string) => {
+    // Generate category order sorted alphabetically for the new store
+    const sortedCatIds = [...categories]
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map(c => c.id);
+
     const newStore: Store = {
       id: generateId(),
       name,
       isFavorite: stores.length === 0,
-      categoryOrder: categories.map(c => c.id)
+      categoryOrder: sortedCatIds
     };
     setStores(prev => [...prev, newStore]);
   };
@@ -142,9 +195,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleFavoriteStore = (id: string) => {
     if (stores.find(s => s.id === id)?.isFavorite) return; // Already fav
-    if (window.confirm("Définir ce magasin comme favori ?")) {
-      setStores(prev => prev.map(s => ({ ...s, isFavorite: s.id === id })));
-    }
+    // Confirmation handled in view now
+    setStores(prev => prev.map(s => ({ ...s, isFavorite: s.id === id })));
   };
 
   const addShoppingList = (name: string) => {
@@ -180,13 +232,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // Unit Management
+  const addUnit = (unit: string) => {
+    const trimmed = unit.trim();
+    if(trimmed && !units.some(u => u.toLowerCase() === trimmed.toLowerCase())) {
+        setUnits(prev => [...prev, trimmed]);
+    }
+  };
+
+  const updateUnit = (oldUnit: string, newUnit: string) => {
+    setUnits(prev => prev.map(u => u === oldUnit ? newUnit.trim() : u));
+  };
+
+  const deleteUnit = (unit: string) => {
+    setUnits(prev => prev.filter(u => u !== unit));
+  };
+
+
   return (
     <AppContext.Provider value={{
-      categories, products, stores, shoppingLists,
-      addCategory, updateCategory,
+      categories: sortedCategories,
+      products, stores, shoppingLists, 
+      units: sortedUnits, // Return sorted units
+      addCategory, updateCategory, deleteCategory,
       addProduct, updateProduct, deleteProduct,
       addStore, updateStore, deleteStore, toggleFavoriteStore,
-      addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList
+      addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
+      addUnit, updateUnit, deleteUnit
     }}>
       {children}
     </AppContext.Provider>

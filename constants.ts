@@ -1,3 +1,4 @@
+
 import { Category, Store } from './types';
 
 export const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
@@ -10,7 +11,7 @@ export const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
   { name: 'Fournitures scolaires', iconName: 'Ruler' },
   { name: 'Bricolage', iconName: 'Hammer' },
   { name: 'Ustensiles de cuisine', iconName: 'Utensils' },
-  { name: 'Vaisselle', iconName: 'CupSoda' },
+  { name: 'Vaisselle / Art de la table', iconName: 'CupSoda' },
   { name: 'Décoration', iconName: 'Lamp' },
   { name: 'Jouets', iconName: 'Gamepad2' },
   { name: 'Produits d’entretien', iconName: 'Sparkles' },
@@ -43,16 +44,34 @@ export const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
   { name: 'Boucherie', iconName: 'Beef' },
   { name: 'Poissonnerie', iconName: 'Fish' },
   { name: 'Produits frais industriels', iconName: 'Package' },
+  { name: 'Sport', iconName: 'Dumbbell' },
 ];
 
 export const DEFAULT_STORE_NAMES = [
   'Leclerc', 'Carrefour', 'Auchan', 'Super U', 'Intermarché', 'Monoprix', 'Lidl', 'Aldi'
 ];
 
+export const DEFAULT_UNITS = [
+    'Aucune', 
+    'boite(s)', 
+    'bouteille(s)', 
+    'cl', 
+    'filet(s)', 
+    'fiole(s)',
+    'g', 
+    'kg', 
+    'L', 
+    'paquet(s)', 
+    'pièce(s)', 
+    'pot(s)',
+    'sachet(s)',
+    'unité(s)'
+];
+
 export const ICONS_LIST = [
   'Apple', 'Banana', 'Beef', 'Beer', 'Book', 'Box', 'Briefcase', 'Brush', 'CakeSlice', 'Candy',
   'Carrot', 'ChefHat', 'Cheese', 'Chopsticks', 'Cigarette', 'CircleDollarSign', 'Coffee', 'Cookie',
-  'Croissant', 'CupSoda', 'Cylinder', 'Dog', 'Droplet', 'Fish', 'Flower', 'Gamepad2', 'Gift',
+  'Croissant', 'CupSoda', 'Cylinder', 'Dog', 'Droplet', 'Dumbbell', 'Fish', 'Flower', 'Gamepad2', 'Gift',
   'GlassWater', 'Globe', 'Hammer', 'HeartPulse', 'Home', 'IceCream', 'Key', 'Lamp', 'Laptop',
   'Leaf', 'Lightbulb', 'Milk', 'Package', 'Paintbrush', 'Pencil', 'Pepper', 'Pizza', 'Plug',
   'Ruler', 'Sandwich', 'Sausage', 'Scale', 'Scissors', 'Shirt', 'ShoppingBasket', 'ShoppingCart',

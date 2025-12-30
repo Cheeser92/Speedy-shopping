@@ -2,7 +2,7 @@
 <html lang="fr">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>ShopFlow</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -14,6 +14,11 @@
       }
       .animate-pop {
         animation: pop 0.5s ease-out forwards;
+      }
+      
+      /* Force inputs to be at least 16px to prevent iOS zoom on focus */
+      input, select, textarea {
+        font-size: 16px !important; 
       }
     </style>
   <script type="importmap">

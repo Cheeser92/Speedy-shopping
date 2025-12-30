@@ -1,6 +1,7 @@
+
 import React, { useState } from 'react';
 import { useAppContext } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ShoppingListsView: React.FC = () => {
@@ -9,6 +10,10 @@ const ShoppingListsView: React.FC = () => {
   const [newListName, setNewListName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  
+  // Custom delete confirmation state
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
+  
   const navigate = useNavigate();
 
   const handleCreate = () => {
@@ -27,6 +32,18 @@ const ShoppingListsView: React.FC = () => {
       }
       setEditingId(null);
       setEditName('');
+    }
+  };
+
+  const requestDelete = (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    setDeleteConfirm({ id, name });
+  };
+
+  const confirmDelete = () => {
+    if (deleteConfirm) {
+      deleteShoppingList(deleteConfirm.id);
+      setDeleteConfirm(null);
     }
   };
 
@@ -54,7 +71,7 @@ const ShoppingListsView: React.FC = () => {
                   placeholder="Nom de la liste..."
                   value={newListName}
                   onChange={(e) => setNewListName(e.target.value)}
-                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 invalid:border-red-500 shadow-inner"
+                  className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:border-indigo-500 invalid:border-red-500 shadow-inner bg-indigo-50 text-indigo-900 placeholder-indigo-300"
                   autoFocus
                 />
                 <button onClick={handleCreate} className="bg-indigo-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-indigo-700">Créer</button>
@@ -75,7 +92,7 @@ const ShoppingListsView: React.FC = () => {
                     type="text"
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
-                    className="flex-1 p-2 border border-indigo-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                    className="flex-1 p-2 border border-indigo-300 rounded-lg shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-indigo-50 text-indigo-900"
                     autoFocus
                   />
                   <button onClick={handleUpdate} className="bg-green-500 text-white px-3 py-2 rounded-lg text-sm font-semibold">OK</button>
@@ -111,8 +128,8 @@ const ShoppingListsView: React.FC = () => {
                   <Copy size={18} />
                 </button>
                 <button
-                  onClick={(e) => { e.stopPropagation(); if(window.confirm('Supprimer cette liste ?')) deleteShoppingList(list.id); }}
-                  className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                  onClick={(e) => requestDelete(e, list.id, list.name)}
+                  className="text-red-500 hover:text-red-700 transition-colors p-1 z-20"
                   title="Supprimer"
                 >
                   <Trash2 size={18} />
@@ -122,6 +139,38 @@ const ShoppingListsView: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+            <div className="flex flex-col items-center text-center mb-4">
+               <div className="bg-red-100 p-3 rounded-full mb-3 text-red-500">
+                  <AlertTriangle size={32} />
+               </div>
+               <h3 className="text-lg font-bold text-slate-800">Supprimer la liste ?</h3>
+               <p className="text-gray-600 mt-2">
+                 Êtes-vous sûr de vouloir supprimer la liste <span className="font-semibold">"{deleteConfirm.name}"</span> ?
+                 <br/><span className="text-xs text-red-400 mt-1 block">Cette action est irréversible.</span>
+               </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setDeleteConfirm(null)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={confirmDelete}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
