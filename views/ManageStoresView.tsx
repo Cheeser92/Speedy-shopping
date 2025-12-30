@@ -3,15 +3,20 @@ import React, { useState, useRef } from 'react';
 import { useAppContext } from '../services/AppContext';
 import { Store } from '../types';
 import { IconComponent } from '../components/IconComponent';
-import { Plus, Star, Trash2, ArrowUp, ArrowDown, Settings, AlertTriangle, GripVertical } from 'lucide-react';
+import { Star, Trash2, ArrowUp, ArrowDown, AlertTriangle, GripVertical } from 'lucide-react';
 
 const ManageStoresView: React.FC = () => {
-  const { stores, addStore, updateStore, deleteStore, toggleFavoriteStore, categories } = useAppContext();
+  const { 
+    stores, addStore, updateStore, deleteStore, toggleFavoriteStore, 
+    categories, shoppingLists, deleteShoppingList 
+  } = useAppContext();
+  
   const [selectedStoreId, setSelectedStoreId] = useState<string>(stores[0]?.id || '');
   const [isCreating, setIsCreating] = useState(false);
   const [newStoreName, setNewStoreName] = useState('');
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
+  // Modification de l'état pour inclure le nombre de listes impactées
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, count: number} | null>(null);
   const [favConfirm, setFavConfirm] = useState<{id: string, name: string} | null>(null);
 
   const dragItem = useRef<number | null>(null);
@@ -58,9 +63,23 @@ const ManageStoresView: React.FC = () => {
     updateStore({ ...selectedStore, categoryOrder: [...selectedStore.categoryOrder, catId] });
   };
 
+  const requestDelete = (e: React.MouseEvent, store: Store) => {
+    e.stopPropagation();
+    // Compter les listes associées à ce magasin
+    const count = shoppingLists.filter(l => l.storeId === store.id).length;
+    setDeleteConfirm({ id: store.id, name: store.name, count });
+  };
+
   const confirmDelete = () => {
     if (deleteConfirm) {
+        // 1. Supprimer les listes associées
+        const listsToDelete = shoppingLists.filter(l => l.storeId === deleteConfirm.id);
+        listsToDelete.forEach(l => deleteShoppingList(l.id));
+
+        // 2. Supprimer le magasin
         deleteStore(deleteConfirm.id);
+        
+        // 3. Gestion de l'interface
         if (selectedStoreId === deleteConfirm.id) {
              const remaining = stores.filter(s => s.id !== deleteConfirm.id);
              setSelectedStoreId(remaining[0]?.id || '');
@@ -130,18 +149,28 @@ const ManageStoresView: React.FC = () => {
       
       {/* Store Selector & Actions */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 mb-4 transition-colors">
-        <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
             {stores.map(s => (
-                <button 
+                <div 
                     key={s.id} 
                     onClick={() => setSelectedStoreId(s.id)}
-                    className={`flex items-center whitespace-nowrap px-4 py-2 rounded-full border transition-colors ${selectedStoreId === s.id ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
+                    className={`flex items-center whitespace-nowrap pl-4 pr-2 py-2 rounded-full border transition-all cursor-pointer gap-2 ${selectedStoreId === s.id ? 'bg-primary-600 text-white border-primary-600 shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700'}`}
                 >
-                    {s.name}
-                    {s.isFavorite && <Star size={12} fill="currentColor" className="ml-2 text-yellow-300" />}
-                </button>
+                    <span className="font-medium">{s.name}</span>
+                    {s.isFavorite && <Star size={14} fill="currentColor" className="text-yellow-300" />}
+                    
+                    {!s.isFavorite && (
+                         <button
+                            onClick={(e) => requestDelete(e, s)}
+                            className={`p-1 rounded-full hover:bg-red-500 hover:text-white transition-colors ${selectedStoreId === s.id ? 'text-red-200 hover:text-white' : 'text-red-500 dark:text-red-400'}`}
+                            title="Supprimer le magasin"
+                         >
+                            <Trash2 size={14} />
+                         </button>
+                    )}
+                </div>
             ))}
-            <button onClick={() => setIsCreating(true)} className="px-3 py-2 rounded-full border border-dashed border-primary-400 text-primary-500 hover:bg-primary-50 dark:hover:bg-slate-800">+</button>
+            <button onClick={() => setIsCreating(true)} className="px-3 py-2 rounded-full border border-dashed border-primary-400 text-primary-500 hover:bg-primary-50 dark:hover:bg-slate-800 flex-shrink-0 flex items-center justify-center h-[42px] w-[42px]">+</button>
         </div>
         
         {isCreating && (
@@ -171,14 +200,7 @@ const ManageStoresView: React.FC = () => {
                     <Star size={18} fill={selectedStore.isFavorite ? "currentColor" : "none"} /> 
                     {selectedStore.isFavorite ? 'Magasin favori' : 'Définir comme favori'}
                 </button>
-                {!selectedStore.isFavorite && (
-                    <button 
-                        onClick={() => setDeleteConfirm({id: selectedStore.id, name: selectedStore.name})}
-                        className="text-red-500 hover:text-red-700 dark:hover:text-red-400"
-                    >
-                        <Trash2 size={18} />
-                    </button>
-                )}
+                {/* L'ancien bouton poubelle a été retiré d'ici car il est maintenant dans la liste horizontale */}
             </div>
         )}
       </div>
@@ -249,8 +271,21 @@ const ManageStoresView: React.FC = () => {
                </div>
                <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer le magasin ?</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
+                 Vous êtes sur le point de supprimer <span className="font-semibold">"{deleteConfirm.name}"</span>.
                </p>
+               
+               {deleteConfirm.count > 0 ? (
+                    <div className="bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-900 p-3 rounded-lg mt-3 w-full">
+                        <p className="text-red-600 dark:text-red-400 font-semibold text-sm">
+                            Attention :
+                        </p>
+                        <p className="text-red-600 dark:text-red-400 text-sm">
+                            {deleteConfirm.count} liste{deleteConfirm.count > 1 ? 's' : ''} de courses associée{deleteConfirm.count > 1 ? 's' : ''} ser{deleteConfirm.count > 1 ? 'ont' : 'a'} également supprimée{deleteConfirm.count > 1 ? 's' : ''}.
+                        </p>
+                    </div>
+               ) : (
+                   <p className="text-sm text-gray-400 mt-2">Aucune liste n'est associée à ce magasin.</p>
+               )}
             </div>
             <div className="flex gap-3 justify-center">
               <button 
@@ -263,7 +298,7 @@ const ManageStoresView: React.FC = () => {
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Supprimer
+                Tout supprimer
               </button>
             </div>
           </div>
