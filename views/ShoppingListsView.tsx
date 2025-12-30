@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const ShoppingListsView: React.FC = () => {
@@ -10,6 +10,7 @@ const ShoppingListsView: React.FC = () => {
   const [newListName, setNewListName] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string} | null>(null);
   
@@ -53,10 +54,14 @@ const ShoppingListsView: React.FC = () => {
     }, 0).toFixed(2);
   };
 
+  const filteredLists = shoppingLists.filter(list => 
+    list.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="p-4 pb-24 min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-primary-600 to-purple-600 dark:from-primary-400 dark:to-purple-400 drop-shadow-sm">
+        <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">
           Mes Listes
         </h1>
         <button
@@ -65,6 +70,17 @@ const ShoppingListsView: React.FC = () => {
         >
             <Plus size={20} className="mr-1" /> Nouvelle liste
         </button>
+      </div>
+
+      <div className="relative mb-6">
+          <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
+          <input 
+              type="text" 
+              placeholder="Rechercher une liste..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
+          />
       </div>
 
       <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
@@ -86,7 +102,7 @@ const ShoppingListsView: React.FC = () => {
            </div>
         )}
 
-        {shoppingLists.map((list) => (
+        {filteredLists.map((list) => (
           <div key={list.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-primary-50 dark:border-slate-700 hover:shadow-lg transition-all relative overflow-hidden group">
              {/* Decorative background circle */}
              <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary-50 dark:bg-slate-700 rounded-full opacity-50 group-hover:bg-primary-100 dark:group-hover:bg-slate-600 transition-colors pointer-events-none"></div>
@@ -189,3 +205,4 @@ const ShoppingListsView: React.FC = () => {
 };
 
 export default ShoppingListsView;
+    

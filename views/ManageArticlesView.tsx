@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { useAppContext } from '../services/AppContext';
-import { Product } from '../types';
-import { Plus, Edit2, Trash2, History, Search, AlertTriangle } from 'lucide-react';
+import { Product, PricePoint } from '../types';
+import { Plus, Edit2, Trash2, History, Search, AlertTriangle, X } from 'lucide-react';
 import { UnitManager } from '../components/UnitManager';
 
 const ManageArticlesView: React.FC = () => {
@@ -95,12 +95,101 @@ const ManageArticlesView: React.FC = () => {
 
   const getCatName = (id: string) => categories.find(c => c.id === id)?.name || 'Inconnu';
 
+  // --- Fonction pour générer le graphique SVG ---
+  const renderTrendChart = (history: PricePoint[]) => {
+    if (!history || history.length < 2) return null;
+
+    // Conversion des dates "dd/mm/yyyy" en timestamps pour le tri et le calcul
+    const data = history.map(h => {
+      const [d, m, y] = h.date.split('/');
+      return {
+        timestamp: new Date(parseInt(y), parseInt(m) - 1, parseInt(d)).getTime(),
+        price: h.price,
+        rawDate: h.date
+      };
+    }).sort((a, b) => a.timestamp - b.timestamp);
+
+    const prices = data.map(d => d.price);
+    const minPrice = Math.min(...prices);
+    const maxPrice = Math.max(...prices);
+    
+    // Si tous les prix sont identiques, on ne peut pas dessiner une courbe significative,
+    // mais on peut afficher une ligne droite.
+    const isFlat = minPrice === maxPrice;
+
+    const minTime = data[0].timestamp;
+    const maxTime = data[data.length - 1].timestamp;
+
+    // Dimensions du SVG
+    const width = 300;
+    const height = 80;
+    const padding = 10;
+
+    const getX = (time: number) => {
+      if (maxTime === minTime) return width / 2;
+      return padding + ((time - minTime) / (maxTime - minTime)) * (width - 2 * padding);
+    };
+
+    const getY = (price: number) => {
+        if (isFlat) return height / 2;
+        // Inversion de Y car SVG commence en haut
+        return height - (padding + ((price - minPrice) / (maxPrice - minPrice)) * (height - 2 * padding));
+    };
+
+    const points = data.map(d => `${getX(d.timestamp)},${getY(d.price)}`).join(' ');
+
+    return (
+      <div className="mb-6 mt-2">
+         <h4 className="text-center font-bold text-gray-500 dark:text-gray-300 text-sm mb-2 uppercase tracking-wide">Tendance</h4>
+         <div className="w-full bg-gray-50 dark:bg-slate-900 rounded-lg p-2 border border-gray-100 dark:border-slate-700">
+             <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
+                <defs>
+                   <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="var(--color-primary-500)" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="var(--color-primary-500)" stopOpacity="0" />
+                   </linearGradient>
+                </defs>
+                
+                {/* Zone remplie sous la courbe */}
+                <path 
+                  d={`M ${getX(data[0].timestamp)},${height} L ${points} L ${getX(data[data.length-1].timestamp)},${height} Z`}
+                  fill="url(#chartGradient)"
+                  stroke="none"
+                />
+
+                {/* Ligne principale */}
+                <polyline 
+                    fill="none" 
+                    stroke="var(--color-primary-500)" 
+                    strokeWidth="2" 
+                    points={points} 
+                    strokeLinecap="round" 
+                    strokeLinejoin="round" 
+                />
+
+                {/* Points */}
+                {data.map((d, i) => (
+                   <circle 
+                     key={i} 
+                     cx={getX(d.timestamp)} 
+                     cy={getY(d.price)} 
+                     r="3" 
+                     className="fill-white dark:fill-slate-800 stroke-primary-500" 
+                     strokeWidth="2" 
+                   />
+                ))}
+             </svg>
+         </div>
+      </div>
+    );
+  };
+
   return (
     <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Header & Search */}
       <div className="sticky top-0 bg-gray-50 dark:bg-slate-950 pt-2 pb-4 z-10">
         <div className="flex justify-between items-center mb-4">
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Articles</h1>
+            <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Articles</h1>
             <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
                 <Plus size={18} className="mr-1" /> Nouvel Article
             </button>
@@ -189,19 +278,25 @@ const ManageArticlesView: React.FC = () => {
       {/* Price History Modal */}
       {showHistoryId && (
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 w-full max-w-sm">
-                  <div className="flex justify-between items-center mb-4">
-                      <h3 className="font-bold text-slate-800 dark:text-white">Historique des prix</h3>
-                      <button onClick={() => setShowHistoryId(null)} className="text-gray-500 hover:text-red-500">X</button>
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 w-full max-w-sm animate-pop">
+                  <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-bold text-slate-800 dark:text-white text-lg">Historique des prix</h3>
+                      <button onClick={() => setShowHistoryId(null)} className="text-gray-500 hover:text-red-500 bg-gray-100 dark:bg-slate-700 rounded-full p-1"><X size={20}/></button>
                   </div>
-                  <ul className="divide-y divide-gray-100 dark:divide-slate-700 max-h-60 overflow-y-auto">
-                      {products.find(p => p.id === showHistoryId)?.priceHistory.map((h, i) => (
-                          <li key={i} className="py-2 flex justify-between text-sm">
-                              <span className="text-gray-600 dark:text-slate-400">{h.date}</span>
-                              <span className="font-bold text-slate-800 dark:text-white">{h.price} €</span>
-                          </li>
-                      ))}
-                  </ul>
+                  
+                  {/* Graphique de tendance */}
+                  {renderTrendChart(products.find(p => p.id === showHistoryId)?.priceHistory || [])}
+
+                  <div className="max-h-60 overflow-y-auto pr-1">
+                    <ul className="divide-y divide-gray-100 dark:divide-slate-700">
+                        {products.find(p => p.id === showHistoryId)?.priceHistory.slice().reverse().map((h, i) => (
+                            <li key={i} className="py-3 flex justify-between text-sm items-center">
+                                <span className="text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-700 px-2 py-1 rounded">{h.date}</span>
+                                <span className="font-bold text-primary-600 dark:text-primary-400 text-base">{h.price} €</span>
+                            </li>
+                        ))}
+                    </ul>
+                  </div>
               </div>
           </div>
       )}
@@ -241,3 +336,4 @@ const ManageArticlesView: React.FC = () => {
 };
 
 export default ManageArticlesView;
+    

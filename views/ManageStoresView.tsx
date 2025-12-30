@@ -145,7 +145,7 @@ const ManageStoresView: React.FC = () => {
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
-      <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4">Magasins</h1>
+      <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm mb-4">Magasins</h1>
       
       {/* Store Selector & Actions */}
       <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 mb-4 transition-colors">
@@ -340,3 +340,4 @@ const ManageStoresView: React.FC = () => {
 };
 
 export default ManageStoresView;
+    
