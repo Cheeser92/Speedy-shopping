@@ -212,17 +212,17 @@ const ListDetailView: React.FC = () => {
             <div key={category.id} className="mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
               <div 
                 onClick={() => toggleCatCollapse(category.id)}
-                className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700"
+                className="flex items-center justify-between p-3 bg-primary-600 dark:bg-primary-700 cursor-pointer hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
               >
-                <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold">
-                  <IconComponent name={category.iconName} size={18} className="text-primary-500 dark:text-primary-400" />
+                <div className="flex items-center gap-2 text-white font-bold">
+                  <IconComponent name={category.iconName} size={18} className="text-white" />
                   {t_cat(category.name)}
                   <div className="flex gap-2 ml-1">
-                    <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{items.length}</span>
-                    <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{categoryTotal} €</span>
+                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{items.length}</span>
+                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{categoryTotal} €</span>
                   </div>
                 </div>
-                <div className="text-gray-500 dark:text-slate-400">
+                <div className="text-white/80">
                   {collapsedCats.includes(category.id) ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 </div>
               </div>
