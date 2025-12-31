@@ -52,19 +52,33 @@ export const DEFAULT_STORE_NAMES = [
 ];
 
 export const DEFAULT_UNITS = [
-    'Aucune', 
+    'Aucune',
+    'barquette(s)', 
+    'bâton(s)',
+    'bidon(s)',
     'boite(s)', 
-    'bouteille(s)', 
+    'botte(s)',
+    'bouteille(s)',
+    'branche(s)',
     'cl', 
+    'colis(s)',
     'filet(s)', 
     'fiole(s)',
+    'flacon(s)',
+    'fut(s)',
     'g', 
     'kg', 
     'L', 
+    'morceau(x)',
+    'pack(s)',
     'paquet(s)', 
     'pièce(s)', 
+    'plaquette(s)',
     'pot(s)',
+    'rouleau(x)',
     'sachet(s)',
+    'tranche(s)',
+    'tube(s)',
     'unité(s)'
 ];
 

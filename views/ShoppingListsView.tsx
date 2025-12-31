@@ -83,7 +83,7 @@ const ShoppingListsView: React.FC = () => {
           />
       </div>
 
-      <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
         {isCreating && (
            <div className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border-l-4 border-primary-500 animate-pulse">
              <h3 className="text-sm font-semibold text-gray-600 dark:text-gray-300 mb-2">Nouvelle Liste</h3>
@@ -103,13 +103,13 @@ const ShoppingListsView: React.FC = () => {
         )}
 
         {filteredLists.map((list) => (
-          <div key={list.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-primary-100 dark:border-slate-700 hover:shadow-lg transition-all relative overflow-hidden group">
-             {/* Decorative background circle */}
-             <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary-50 dark:bg-slate-700 rounded-full opacity-50 group-hover:bg-primary-100 dark:group-hover:bg-slate-600 transition-colors pointer-events-none"></div>
+          <div key={list.id} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-primary-100 dark:border-slate-700 hover:shadow-md transition-all relative overflow-hidden group">
+             {/* Decorative background circle - made smaller and lighter */}
+             <div className="absolute -right-6 -top-6 w-20 h-20 bg-primary-50 dark:bg-slate-700 rounded-full opacity-30 group-hover:bg-primary-100 dark:group-hover:bg-slate-600 transition-colors pointer-events-none"></div>
 
             <div className="relative z-10">
               {editingId === list.id ? (
-                <div className="flex gap-2 items-center mb-2">
+                <div className="flex gap-2 items-center mb-0">
                   <input
                     type="text"
                     value={editName}
@@ -121,49 +121,50 @@ const ShoppingListsView: React.FC = () => {
                   <button onClick={() => setEditingId(null)} className="text-gray-500 dark:text-gray-400 px-2">Annuler</button>
                 </div>
               ) : (
-                <div className="flex justify-between items-start mb-2 cursor-pointer" onClick={() => navigate(`/list/${list.id}`)}>
-                  <div>
-                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors">{list.name}</h2>
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      <span className="flex items-center text-xs text-gray-500 dark:text-slate-400">
-                        <Calendar size={12} className="mr-1" /> {list.createdAt}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <span className="flex items-center bg-primary-100 dark:bg-primary-900 text-primary-800 dark:text-primary-200 px-2 py-0.5 rounded-full font-medium text-xs">
-                            <ShoppingBag size={12} className="mr-1" /> {list.items.length}
-                        </span>
-                        <span className="flex items-center bg-green-100 dark:bg-green-900/40 text-green-800 dark:text-green-300 px-2 py-0.5 rounded-full font-medium text-xs">
-                            <Euro size={12} className="mr-1" /> {calculateListTotal(list.items)}
-                        </span>
-                      </div>
+                <div className="cursor-pointer" onClick={() => navigate(`/list/${list.id}`)}>
+                    <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 group-hover:text-primary-700 dark:group-hover:text-primary-400 transition-colors truncate mb-2 pr-4">{list.name}</h2>
+                    
+                    <div className="flex items-center justify-between">
+                        {/* Info Section */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="flex items-center text-xs text-gray-400 dark:text-slate-500">
+                            <Calendar size={12} className="mr-1" /> {list.createdAt}
+                          </span>
+                          <span className="flex items-center bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-md font-medium text-xs border border-primary-100 dark:border-primary-900">
+                              <ShoppingBag size={12} className="mr-1" /> {list.items.length}
+                          </span>
+                          <span className="flex items-center bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-md font-medium text-xs border border-green-100 dark:border-green-900">
+                              <Euro size={12} className="mr-1" /> {calculateListTotal(list.items)}
+                          </span>
+                        </div>
+
+                        {/* Actions Section - On same line */}
+                        <div className="flex items-center gap-1 pl-2 border-l border-gray-100 dark:border-slate-700 ml-1">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setEditingId(list.id); setEditName(list.name); }}
+                              className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+                              title="Modifier"
+                            >
+                              <Edit2 size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => { e.stopPropagation(); duplicateShoppingList(list.id); }}
+                              className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+                              title="Dupliquer"
+                            >
+                              <Copy size={16} />
+                            </button>
+                            <button
+                              onClick={(e) => requestDelete(e, list.id, list.name)}
+                              className="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+                              title="Supprimer"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                        </div>
                     </div>
-                  </div>
                 </div>
               )}
-
-              <div className="flex justify-end gap-3 mt-4 border-t border-gray-100 dark:border-slate-700 pt-3">
-                <button
-                  onClick={(e) => { e.stopPropagation(); setEditingId(list.id); setEditName(list.name); }}
-                  className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 transition-colors p-1"
-                  title="Modifier"
-                >
-                  <Edit2 size={18} />
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); duplicateShoppingList(list.id); }}
-                  className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-1"
-                  title="Dupliquer"
-                >
-                  <Copy size={18} />
-                </button>
-                <button
-                  onClick={(e) => requestDelete(e, list.id, list.name)}
-                  className="text-red-500 hover:text-red-700 dark:hover:text-red-400 transition-colors p-1 z-20"
-                  title="Supprimer"
-                >
-                  <Trash2 size={18} />
-                </button>
-              </div>
             </div>
           </div>
         ))}

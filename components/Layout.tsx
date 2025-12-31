@@ -36,7 +36,7 @@ const Layout: React.FC = () => {
               </NavLink>
               <NavLink to="/categories" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Layers size={24} />
-                <span className="text-[10px] font-medium mt-1">Catégories</span>
+                <span className="text-[10px] font-medium mt-1">Rayons</span>
               </NavLink>
               <NavLink to="/articles" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Tag size={24} />

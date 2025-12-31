@@ -18,6 +18,9 @@ const ManageStoresView: React.FC = () => {
   // Modification de l'état pour inclure le nombre de listes impactées
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, count: number} | null>(null);
   const [favConfirm, setFavConfirm] = useState<{id: string, name: string} | null>(null);
+  
+  // Nouvel état pour la confirmation de suppression de catégorie
+  const [removeCatConfirm, setRemoveCatConfirm] = useState<{id: string, name: string} | null>(null);
 
   const dragItem = useRef<number | null>(null);
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
@@ -53,9 +56,10 @@ const ManageStoresView: React.FC = () => {
     }
   };
 
-  const removeCategoryFromStore = (catId: string) => {
-    if (!selectedStore) return;
-    updateStore({ ...selectedStore, categoryOrder: selectedStore.categoryOrder.filter(id => id !== catId) });
+  const confirmRemoveCategory = () => {
+    if (!selectedStore || !removeCatConfirm) return;
+    updateStore({ ...selectedStore, categoryOrder: selectedStore.categoryOrder.filter(id => id !== removeCatConfirm.id) });
+    setRemoveCatConfirm(null);
   };
 
   const addCategoryToStore = (catId: string) => {
@@ -258,7 +262,7 @@ const ManageStoresView: React.FC = () => {
                         <div className="flex items-center gap-1">
                             <button onClick={() => moveCategory(index, 'up')} disabled={index === 0} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded disabled:opacity-30 text-gray-400 dark:text-slate-500 hover:text-primary-600"><ArrowUp size={16}/></button>
                             <button onClick={() => moveCategory(index, 'down')} disabled={index === activeCategories.length - 1} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded disabled:opacity-30 text-gray-400 dark:text-slate-500 hover:text-primary-600"><ArrowDown size={16}/></button>
-                            <button onClick={() => removeCategoryFromStore(cat.id)} className="p-1 text-red-500 hover:text-red-700 ml-2"><Trash2 size={16}/></button>
+                            <button onClick={() => setRemoveCatConfirm({ id: cat.id, name: cat.name })} className="p-1 text-red-500 hover:text-red-700 ml-2"><Trash2 size={16}/></button>
                         </div>
                     </div>
                 ))}
@@ -266,7 +270,7 @@ const ManageStoresView: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
+      {/* Delete Store Confirmation Modal */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
@@ -304,6 +308,40 @@ const ManageStoresView: React.FC = () => {
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
                 Tout supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Remove Category from Store Confirmation Modal */}
+      {removeCatConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+            <div className="flex flex-col items-center text-center mb-4">
+               <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
+                  <AlertTriangle size={32} />
+               </div>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Retirer le rayon ?</h3>
+               <p className="text-gray-600 dark:text-slate-300 mt-2">
+                 Voulez-vous retirer le rayon <span className="font-semibold">"{removeCatConfirm.name}"</span> de ce magasin ?
+               </p>
+               <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+                   (La catégorie existera toujours dans les autres magasins et dans la liste globale)
+               </p>
+            </div>
+            <div className="flex gap-3 justify-center">
+              <button 
+                onClick={() => setRemoveCatConfirm(null)}
+                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
+              >
+                Annuler
+              </button>
+              <button 
+                onClick={confirmRemoveCategory}
+                className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
+              >
+                Retirer
               </button>
             </div>
           </div>

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../services/AppContext';
 import { Product, PricePoint } from '../types';
-import { Plus, Edit2, Trash2, History, Search, AlertTriangle, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, History, Search, AlertTriangle, X, Eraser } from 'lucide-react';
 import { UnitManager } from '../components/UnitManager';
 
 const ManageArticlesView: React.FC = () => {
@@ -237,7 +237,7 @@ const ManageArticlesView: React.FC = () => {
                         <input className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg outline-none focus:border-primary-500 invalid:border-red-500 shadow-inner bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Catégorie *</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Rayon *</label>
                         <select className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
@@ -260,7 +260,23 @@ const ManageArticlesView: React.FC = () => {
                     </div>
                     <div>
                         <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Note</label>
-                        <textarea className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" rows={2} value={formData.note} onChange={e => setFormData({...formData, note: e.target.value})} />
+                        <div className="relative">
+                            <textarea 
+                                className="w-full p-2 pr-8 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" 
+                                rows={2} 
+                                value={formData.note} 
+                                onChange={e => setFormData({...formData, note: e.target.value})} 
+                            />
+                            {formData.note && (
+                                <button 
+                                    onClick={() => setFormData({...formData, note: ''})}
+                                    className="absolute right-2 top-2 text-gray-400 hover:text-primary-500 dark:text-slate-500 dark:hover:text-primary-400"
+                                    title="Effacer la note"
+                                >
+                                    <Eraser size={16} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 

@@ -251,7 +251,7 @@ const SettingsView: React.FC = () => {
                  </div>
              </div>
              <p className="mt-3 text-xs text-gray-400 dark:text-slate-500 text-center">
-                 Le fichier .json contient toutes vos listes, articles, catégories et préférences.
+                 Le fichier .json contient toutes vos listes, articles, rayons et préférences.
              </p>
           </div>
       </div>
@@ -278,6 +278,7 @@ const SettingsView: React.FC = () => {
                         <li>Listes : {importCandidate.shoppingLists?.length || 0}</li>
                         <li>Articles : {importCandidate.products?.length || 0}</li>
                         <li>Magasins : {importCandidate.stores?.length || 0}</li>
+                        <li>Rayons : {importCandidate.categories?.length || 0}</li>
                     </ul>
                 </div>
                 <p className="font-semibold text-red-500">

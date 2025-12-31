@@ -358,7 +358,7 @@ const ListDetailView: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Catégorie</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Rayon</label>
                         <select 
                             value={newProductData.categoryId} 
                             onChange={e => setNewProductData({...newProductData, categoryId: e.target.value})}

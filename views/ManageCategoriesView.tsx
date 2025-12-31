@@ -53,9 +53,9 @@ const ManageCategoriesView: React.FC = () => {
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Catégories</h1>
+         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Rayons</h1>
          <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-            <Plus size={18} className="mr-1" /> Catégorie
+            <Plus size={18} className="mr-1" /> Rayon
          </button>
       </div>
 
@@ -84,7 +84,7 @@ const ManageCategoriesView: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 animate-pop">
-                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? 'Modifier' : 'Créer'} une catégorie</h2>
+                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? 'Modifier' : 'Créer'} un rayon</h2>
                 
                 <div className="mb-4">
                     <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nom *</label>
@@ -124,7 +124,7 @@ const ManageCategoriesView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer la catégorie ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer le rayon ?</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
                  Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
                </p>
