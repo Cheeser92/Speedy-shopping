@@ -317,10 +317,10 @@ const ListDetailView: React.FC = () => {
                 <button
                   key={p.id}
                   onClick={() => handleAddItem(p.id)}
-                  className="w-full text-left p-3 hover:bg-primary-50 dark:hover:bg-slate-700 border-b last:border-0 border-gray-50 dark:border-slate-700 flex justify-between items-center"
+                  className="w-full text-left p-3 hover:bg-primary-50 dark:hover:bg-slate-700 border-b last:border-0 border-gray-50 dark:border-slate-700 flex items-center justify-start gap-2"
                 >
                   <span className="font-medium text-slate-700 dark:text-slate-200">{p.name}</span>
-                  <span className="text-xs text-gray-400">{categories.find(c => c.id === p.categoryId)?.name}</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">({categories.find(c => c.id === p.categoryId)?.name})</span>
                 </button>
               ))}
               

@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES } from '../constants';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS } from '../constants';
 
 interface AppState {
   categories: Category[];
@@ -90,7 +90,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setCategories(initialCategories);
     }
 
-    if (savedProducts) setProducts(JSON.parse(savedProducts));
+    if (savedProducts) {
+      setProducts(JSON.parse(savedProducts));
+    } else {
+      // Generate default products from constants if no products exist
+      const initialProducts: Product[] = DEFAULT_INITIAL_PRODUCTS.map(def => {
+        const category = initialCategories.find(c => c.name === def.categoryName);
+        if (category) {
+          return {
+            id: generateId(),
+            name: def.name,
+            categoryId: category.id,
+            defaultPrice: 0,
+            defaultUnit: (def as any).unit || 'Aucune',
+            priceHistory: [{ date: getTodayDate(), price: 0 }]
+          };
+        }
+        return null;
+      }).filter((p): p is Product => p !== null);
+      
+      setProducts(initialProducts);
+    }
 
     if (savedStores) {
       setStores(JSON.parse(savedStores));
