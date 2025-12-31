@@ -185,9 +185,9 @@ const ManageArticlesView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       {/* Header & Search */}
-      <div className="sticky top-0 bg-gray-50 dark:bg-slate-950 pt-2 pb-4 z-10">
+      <div className="sticky top-0 bg-primary-50 dark:bg-slate-950 pt-2 pb-4 z-10 transition-colors duration-300">
         <div className="flex justify-between items-center mb-4">
             <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Articles</h1>
             <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
@@ -201,14 +201,14 @@ const ManageArticlesView: React.FC = () => {
                 placeholder="Rechercher un article..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
+                className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
             />
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredProducts.map(p => (
-            <div key={p.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 flex flex-col gap-2">
+            <div key={p.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 flex flex-col gap-2">
                 <div className="flex justify-between items-start">
                     <div>
                         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">{p.name}</h3>

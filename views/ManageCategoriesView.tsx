@@ -51,7 +51,7 @@ const ManageCategoriesView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
          <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Catégories</h1>
          <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
@@ -61,7 +61,7 @@ const ManageCategoriesView: React.FC = () => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
         {categories.map(cat => (
-            <div key={cat.id} className="bg-white dark:bg-slate-900 p-3 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 flex items-center justify-between group transition-colors">
+            <div key={cat.id} className="bg-white dark:bg-slate-900 p-3 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 flex items-center justify-between group transition-colors">
                 <div className="flex items-center gap-3 overflow-hidden">
                     <div className="bg-primary-50 dark:bg-slate-800 p-2 rounded-full text-primary-600 dark:text-primary-400 flex-shrink-0">
                         <IconComponent name={cat.iconName} size={20} />

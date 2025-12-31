@@ -23,7 +23,7 @@ const Layout: React.FC = () => {
   }, [fontSize, isShoppingMode]);
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 transition-colors duration-300">
+    <div className="min-h-screen bg-primary-50 dark:bg-slate-950 font-sans text-slate-800 dark:text-slate-100 transition-colors duration-300">
       <div className="w-full min-h-screen relative">
         <Outlet />
         

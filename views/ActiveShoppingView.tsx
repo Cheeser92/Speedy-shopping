@@ -93,7 +93,7 @@ const ActiveShoppingView: React.FC = () => {
   if (!list) return null;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-950 relative overflow-hidden transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-primary-50 dark:bg-slate-950 relative overflow-hidden transition-colors duration-300">
       {/* Immersive Header */}
       <div className="bg-white dark:bg-slate-900 p-4 shadow-md flex justify-between items-center z-20 gap-3 transition-colors duration-300">
         <button onClick={() => navigate(-1)} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-full hover:bg-gray-200 dark:hover:bg-slate-700">

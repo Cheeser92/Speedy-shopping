@@ -144,7 +144,7 @@ const ManageStoresView: React.FC = () => {
 
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-gray-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
+    <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
       
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Magasins</h1>
@@ -154,7 +154,7 @@ const ManageStoresView: React.FC = () => {
       </div>
       
       {/* Store Selector & Actions */}
-      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 mb-4 transition-colors">
+      <div className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 mb-4 transition-colors">
         <div className="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
             {stores.map(s => (
                 <div 

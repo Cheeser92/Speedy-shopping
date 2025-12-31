@@ -171,7 +171,7 @@ const ListDetailView: React.FC = () => {
   if (!list) return <div className="text-center p-10 dark:text-white">Liste introuvable</div>;
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 dark:bg-slate-950 relative transition-colors duration-300">
+    <div className="flex flex-col h-screen bg-primary-50 dark:bg-slate-950 relative transition-colors duration-300">
       {/* Header */}
       <div className="bg-white dark:bg-slate-900 p-4 shadow-sm z-10 flex flex-col gap-3 transition-colors duration-300">
         <div className="flex items-center justify-between">
@@ -209,7 +209,7 @@ const ListDetailView: React.FC = () => {
             }, 0).toFixed(2);
 
             return (
-            <div key={category.id} className="mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+            <div key={category.id} className="mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
               <div 
                 onClick={() => toggleCatCollapse(category.id)}
                 className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-800 cursor-pointer hover:bg-gray-100 dark:hover:bg-slate-700"

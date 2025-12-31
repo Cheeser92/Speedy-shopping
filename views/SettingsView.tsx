@@ -115,12 +115,12 @@ const SettingsView: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-gray-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 pb-24">
+    <div className="p-4 bg-primary-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 pb-24">
       <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm mb-6">Paramètres</h1>
       
       <div className="space-y-4">
           {/* Mode Sombre */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`p-2 rounded-full ${darkMode ? 'bg-primary-900 text-primary-300' : 'bg-orange-100 text-orange-500'} transition-colors duration-300`}>
@@ -146,7 +146,7 @@ const SettingsView: React.FC = () => {
           </div>
 
           {/* Couleur du Thème */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">
                     <Palette size={24} />
@@ -179,7 +179,7 @@ const SettingsView: React.FC = () => {
           </div>
 
           {/* Taille de Police */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">
                     <Type size={24} />
@@ -211,7 +211,7 @@ const SettingsView: React.FC = () => {
           </div>
 
           {/* Sauvegarde / Restauration */}
-          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 p-4 transition-colors duration-300">
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
              <div className="flex items-center gap-3 mb-4">
                 <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">
                     <FileJson size={24} />

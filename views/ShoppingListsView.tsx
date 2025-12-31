@@ -59,7 +59,7 @@ const ShoppingListsView: React.FC = () => {
   );
 
   return (
-    <div className="p-4 pb-24 min-h-screen bg-gradient-to-br from-primary-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 transition-colors duration-300">
+    <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">
           Mes Listes
@@ -79,7 +79,7 @@ const ShoppingListsView: React.FC = () => {
               placeholder="Rechercher une liste..." 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
+              className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
           />
       </div>
 
@@ -103,7 +103,7 @@ const ShoppingListsView: React.FC = () => {
         )}
 
         {filteredLists.map((list) => (
-          <div key={list.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-primary-50 dark:border-slate-700 hover:shadow-lg transition-all relative overflow-hidden group">
+          <div key={list.id} className="bg-white dark:bg-slate-800 p-4 rounded-xl shadow-md border border-primary-100 dark:border-slate-700 hover:shadow-lg transition-all relative overflow-hidden group">
              {/* Decorative background circle */}
              <div className="absolute -right-4 -top-4 w-24 h-24 bg-primary-50 dark:bg-slate-700 rounded-full opacity-50 group-hover:bg-primary-100 dark:group-hover:bg-slate-600 transition-colors pointer-events-none"></div>
 
