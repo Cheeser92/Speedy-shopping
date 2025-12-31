@@ -8,7 +8,7 @@ import { UnitManager } from '../components/UnitManager';
 const ManageArticlesView: React.FC = () => {
   const { 
       products, categories, addProduct, updateProduct, deleteProduct,
-      units, t, t_cat, t_prod, t_unit
+      units, t, t_cat, t_prod, t_unit, language
   } = useAppContext();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -34,7 +34,7 @@ const ManageArticlesView: React.FC = () => {
 
   const filteredProducts = products
     .filter(p => t_prod(p.name).toLowerCase().includes(searchTerm.toLowerCase()))
-    .sort((a, b) => t_prod(a.name).localeCompare(t_prod(b.name)));
+    .sort((a, b) => t_prod(a.name).localeCompare(t_prod(b.name), language === 'fr' ? 'fr' : 'en', { sensitivity: 'base' }));
 
   const startEdit = (p?: Product) => {
     if (p) {

@@ -112,7 +112,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             categoryId: category.id,
             defaultPrice: 0,
             defaultUnit: (def as any).unit || 'Aucune',
-            priceHistory: [{ date: getTodayDate(), price: 0 }]
+            priceHistory: [] // Initial history is empty as requested
           };
         }
         return null;

@@ -280,7 +280,7 @@ const ShoppingListsView: React.FC = () => {
                             <button onClick={(e) => { e.stopPropagation(); duplicateWeeklyMenu(menu.id); }} className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
                                 <Copy size={16} />
                             </button>
-                            <button onClick={(e) => requestDelete(e, menu.id, menu.name, 'menu')} className="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
+                            <button onClick={(e) => requestDelete(e, menu.id, menu.name, 'menu')} className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
                                 <Trash2 size={16} />
                             </button>
                         </div>
@@ -317,7 +317,7 @@ const ShoppingListsView: React.FC = () => {
                         <button onClick={(e) => { e.stopPropagation(); duplicateShoppingList(list.id); }} className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
                           <Copy size={16} />
                         </button>
-                        <button onClick={(e) => requestDelete(e, list.id, list.name, 'list')} className="text-gray-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
+                        <button onClick={(e) => requestDelete(e, list.id, list.name, 'list')} className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20">
                           <Trash2 size={16} />
                         </button>
                     </div>

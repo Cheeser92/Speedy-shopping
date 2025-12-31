@@ -239,28 +239,28 @@ const ListDetailView: React.FC = () => {
                         <span className="text-slate-700 dark:text-slate-300 font-medium">{t_prod(product.name)}</span>
                         
                         <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-                           {/* Quantity Controls - Bigger */}
-                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10">
+                           {/* Quantity Controls - Resized Smaller */}
+                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10 shadow-sm">
                                <button 
                                    onClick={() => updateItemQuantity(item.productId, -1)} 
-                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg"
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg transition-colors"
                                >
                                    <Minus size={18}/>
                                </button>
                                <span className="min-w-[40px] text-center font-bold text-base text-slate-700 dark:text-slate-200">{item.quantity}</span>
                                <button 
                                    onClick={() => updateItemQuantity(item.productId, 1)} 
-                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg"
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
                                >
                                    <Plus size={18}/>
                                </button>
                            </div>
 
-                           {/* Unit Selector - Bigger Text */}
+                           {/* Unit Selector - Resized Smaller */}
                            <select 
                                value={currentUnit}
                                onChange={(e) => updateItemUnit(item.productId, e.target.value)}
-                               className="h-10 px-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded text-base text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[120px]"
+                               className="h-10 px-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-base text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[120px] shadow-sm"
                            >
                                {units.map(u => (
                                    <option key={u} value={u}>{t_unit(u)}</option>
@@ -270,7 +270,7 @@ const ListDetailView: React.FC = () => {
                            {/* Remove Button - Red Trash Can */}
                            <button 
                             onClick={() => handleRemoveItem(item.productId)}
-                            className="text-red-400 hover:text-red-600 ml-2 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            className="text-red-500 hover:text-red-700 ml-2 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           >
                             <Trash2 size={20} />
                           </button>
