@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { HashRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './services/AppContext';
@@ -9,6 +10,7 @@ import ManageCategoriesView from './views/ManageCategoriesView';
 import ManageArticlesView from './views/ManageArticlesView';
 import ManageStoresView from './views/ManageStoresView';
 import SettingsView from './views/SettingsView';
+import MenuDetailView from './views/MenuDetailView';
 
 const App: React.FC = () => {
   return (
@@ -18,6 +20,7 @@ const App: React.FC = () => {
           <Route path="/" element={<Layout />}>
             <Route index element={<ShoppingListsView />} />
             <Route path="list/:id" element={<ListDetailView />} />
+            <Route path="menu/:id" element={<MenuDetailView />} />
             <Route path="shop/:id" element={<ActiveShoppingView />} />
             <Route path="categories" element={<ManageCategoriesView />} />
             <Route path="articles" element={<ManageArticlesView />} />

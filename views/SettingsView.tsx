@@ -10,7 +10,7 @@ const SettingsView: React.FC = () => {
     darkMode, toggleDarkMode, 
     themeColor, setThemeColor, 
     fontSize, setFontSize,
-    categories, products, stores, shoppingLists, units, importData
+    categories, products, stores, shoppingLists, weeklyMenus, units, importData
   } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -25,6 +25,7 @@ const SettingsView: React.FC = () => {
       products,
       stores,
       shoppingLists,
+      weeklyMenus,
       units,
       preferences: {
         darkMode,

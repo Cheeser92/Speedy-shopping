@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData } from '../types';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES } from '../constants';
 
 interface AppState {
@@ -8,6 +8,7 @@ interface AppState {
   products: Product[];
   stores: Store[];
   shoppingLists: ShoppingList[];
+  weeklyMenus: WeeklyMenu[];
   units: string[];
   darkMode: boolean;
   themeColor: ThemeColor;
@@ -29,6 +30,12 @@ interface AppContextType extends AppState {
   updateShoppingList: (list: ShoppingList) => void;
   deleteShoppingList: (id: string) => void;
   duplicateShoppingList: (id: string) => void;
+  // Menu functions
+  addWeeklyMenu: (menu: Omit<WeeklyMenu, 'id' | 'createdAt'>) => void;
+  updateWeeklyMenu: (menu: WeeklyMenu) => void;
+  deleteWeeklyMenu: (id: string) => void;
+  duplicateWeeklyMenu: (id: string) => void;
+  // Unit functions
   addUnit: (unit: string) => void;
   updateUnit: (oldUnit: string, newUnit: string) => void;
   deleteUnit: (unit: string) => void;
@@ -43,11 +50,18 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const generateId = () => Math.random().toString(36).substr(2, 9);
 const getTodayDate = () => new Date().toLocaleDateString('fr-FR');
 
+// Helper pour créer un menu vide
+export const createEmptyDayMenu = (): DayMenu => ({
+  lunch: { starter: '', main: '', dessert: '' },
+  dinner: { starter: '', main: '', dessert: '' }
+});
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
+  const [weeklyMenus, setWeeklyMenus] = useState<WeeklyMenu[]>([]);
   const [units, setUnits] = useState<string[]>([]);
   const [darkMode, setDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
@@ -60,6 +74,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedProducts = localStorage.getItem('products');
     const savedStores = localStorage.getItem('stores');
     const savedLists = localStorage.getItem('shoppingLists');
+    const savedMenus = localStorage.getItem('weeklyMenus');
     const savedUnits = localStorage.getItem('units');
     const savedDarkMode = localStorage.getItem('darkMode');
     const savedThemeColor = localStorage.getItem('themeColor');
@@ -94,6 +109,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (savedLists) setShoppingLists(JSON.parse(savedLists));
+    if (savedMenus) setWeeklyMenus(JSON.parse(savedMenus));
 
     if (savedUnits) {
         const parsedSavedUnits: string[] = JSON.parse(savedUnits);
@@ -112,8 +128,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
 
     if (savedFontSize) {
-        // Validate if the saved font size still exists in our constants
-        // This prevents crashes if we remove an option (like 'xl') that a user had selected
         if (Object.keys(FONT_SIZES).includes(savedFontSize)) {
             setFontSize(savedFontSize as AppFontSize);
         } else {
@@ -131,12 +145,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('products', JSON.stringify(products));
       localStorage.setItem('stores', JSON.stringify(stores));
       localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
+      localStorage.setItem('weeklyMenus', JSON.stringify(weeklyMenus));
       localStorage.setItem('units', JSON.stringify(units));
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       localStorage.setItem('themeColor', themeColor);
       localStorage.setItem('fontSize', fontSize);
     }
-  }, [categories, products, stores, shoppingLists, units, darkMode, themeColor, fontSize, loaded]);
+  }, [categories, products, stores, shoppingLists, weeklyMenus, units, darkMode, themeColor, fontSize, loaded]);
 
   // Apply Dark Mode Class
   useEffect(() => {
@@ -276,6 +291,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // --- MENU FUNCTIONS ---
+
+  const addWeeklyMenu = (menuData: Omit<WeeklyMenu, 'id' | 'createdAt'>) => {
+    const newMenu: WeeklyMenu = {
+      ...menuData,
+      id: generateId(),
+      createdAt: getTodayDate(),
+    };
+    setWeeklyMenus(prev => [newMenu, ...prev]);
+  };
+
+  const updateWeeklyMenu = (menu: WeeklyMenu) => {
+    setWeeklyMenus(prev => prev.map(m => m.id === menu.id ? menu : m));
+  };
+
+  const deleteWeeklyMenu = (id: string) => {
+    setWeeklyMenus(prev => prev.filter(m => m.id !== id));
+  };
+
+  const duplicateWeeklyMenu = (id: string) => {
+    const menu = weeklyMenus.find(m => m.id === id);
+    if (menu) {
+      const newMenu = {
+        ...menu,
+        id: generateId(),
+        name: `${menu.name} (Copie)`,
+        createdAt: getTodayDate()
+      };
+      setWeeklyMenus(prev => [newMenu, ...prev]);
+    }
+  };
+
+  // ----------------------
+
   const addUnit = (unit: string) => {
     const trimmed = unit.trim();
     if(trimmed && !units.some(u => u.toLowerCase() === trimmed.toLowerCase())) {
@@ -301,14 +350,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           throw new Error("Format de fichier invalide");
       }
 
-      // Mise à jour de l'état React (ceci déclenchera automatiquement la sauvegarde dans localStorage via le useEffect)
-      // Cela permet d'éviter de recharger la page
       setCategories(data.categories);
       setProducts(data.products);
       setStores(data.stores);
       setShoppingLists(data.shoppingLists);
+      if(data.weeklyMenus) setWeeklyMenus(data.weeklyMenus); // Import menus
       
-      // Gestion des unités (compatibilité)
       if(data.units) {
           setUnits(data.units);
       } else {
@@ -325,13 +372,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider value={{
       categories: sortedCategories,
-      products, stores, shoppingLists, 
+      products, stores, shoppingLists, weeklyMenus,
       units: sortedUnits,
       darkMode, themeColor, fontSize,
       addCategory, updateCategory, deleteCategory,
       addProduct, updateProduct, deleteProduct,
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
+      addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu,
       addUnit, updateUnit, deleteUnit,
       toggleDarkMode, setThemeColor, setFontSize,
       importData

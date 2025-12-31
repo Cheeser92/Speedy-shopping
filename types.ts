@@ -42,6 +42,36 @@ export interface ShoppingList {
   items: ShoppingListItem[];
 }
 
+// --- Types pour les Menus ---
+
+export interface Meal {
+  starter: string;
+  main: string;
+  dessert: string;
+}
+
+export interface DayMenu {
+  lunch: Meal;
+  dinner: Meal;
+}
+
+export interface WeeklyMenu {
+  id: string;
+  name: string;
+  createdAt: string;
+  days: {
+    monday: DayMenu;
+    tuesday: DayMenu;
+    wednesday: DayMenu;
+    thursday: DayMenu;
+    friday: DayMenu;
+    saturday: DayMenu;
+    sunday: DayMenu;
+  };
+}
+
+// ---------------------------
+
 export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
 export type AppFontSize = 'small' | 'medium' | 'large';
 
@@ -52,6 +82,7 @@ export interface BackupData {
   products: Product[];
   stores: Store[];
   shoppingLists: ShoppingList[];
+  weeklyMenus: WeeklyMenu[]; // Ajout des menus au backup
   units: string[];
   preferences: {
     darkMode: boolean;
