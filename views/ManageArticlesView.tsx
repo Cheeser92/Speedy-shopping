@@ -32,7 +32,9 @@ const ManageArticlesView: React.FC = () => {
     note: ''
   });
 
-  const filteredProducts = products.filter(p => t_prod(p.name).toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products
+    .filter(p => t_prod(p.name).toLowerCase().includes(searchTerm.toLowerCase()))
+    .sort((a, b) => t_prod(a.name).localeCompare(t_prod(b.name)));
 
   const startEdit = (p?: Product) => {
     if (p) {

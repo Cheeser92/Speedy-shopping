@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
 import { IconComponent } from '../components/IconComponent';
-import { ArrowLeft, Play, ChevronDown, ChevronUp, Plus, Minus, Search, X } from 'lucide-react';
+import { ArrowLeft, Play, ChevronDown, ChevronUp, Plus, Minus, Search, X, Trash2 } from 'lucide-react';
 import { ShoppingListItem } from '../types';
 import { UnitManager } from '../components/UnitManager';
 
@@ -239,40 +239,40 @@ const ListDetailView: React.FC = () => {
                         <span className="text-slate-700 dark:text-slate-300 font-medium">{t_prod(product.name)}</span>
                         
                         <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
-                           {/* Quantity Controls */}
-                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+                           {/* Quantity Controls - Bigger */}
+                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10">
                                <button 
                                    onClick={() => updateItemQuantity(item.productId, -1)} 
-                                   className="p-1 px-2 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg"
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg"
                                >
-                                   <Minus size={14}/>
+                                   <Minus size={18}/>
                                </button>
-                               <span className="w-8 text-center font-semibold text-sm text-slate-700 dark:text-slate-200">{item.quantity}</span>
+                               <span className="min-w-[40px] text-center font-bold text-base text-slate-700 dark:text-slate-200">{item.quantity}</span>
                                <button 
                                    onClick={() => updateItemQuantity(item.productId, 1)} 
-                                   className="p-1 px-2 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg"
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg"
                                >
-                                   <Plus size={14}/>
+                                   <Plus size={18}/>
                                </button>
                            </div>
 
-                           {/* Unit Selector */}
+                           {/* Unit Selector - Bigger Text */}
                            <select 
                                value={currentUnit}
                                onChange={(e) => updateItemUnit(item.productId, e.target.value)}
-                               className="p-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded text-sm text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[100px]"
+                               className="h-10 px-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded text-base text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[120px]"
                            >
                                {units.map(u => (
                                    <option key={u} value={u}>{t_unit(u)}</option>
                                ))}
                            </select>
 
-                           {/* Remove Button */}
+                           {/* Remove Button - Red Trash Can */}
                            <button 
                             onClick={() => handleRemoveItem(item.productId)}
-                            className="text-gray-300 hover:text-red-500 ml-1 p-1"
+                            className="text-red-400 hover:text-red-600 ml-2 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           >
-                            <X size={18} />
+                            <Trash2 size={20} />
                           </button>
                         </div>
                       </div>
