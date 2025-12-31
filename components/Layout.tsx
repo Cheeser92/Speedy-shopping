@@ -7,7 +7,7 @@ import { FONT_SIZES } from '../constants';
 
 const Layout: React.FC = () => {
   const location = useLocation();
-  const { fontSize } = useAppContext();
+  const { fontSize, t } = useAppContext();
   const isShoppingMode = location.pathname.startsWith('/shop/');
 
   // Apply font size logic
@@ -32,23 +32,23 @@ const Layout: React.FC = () => {
             <div className="flex justify-around items-center p-2">
               <NavLink to="/" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <List size={24} />
-                <span className="text-[10px] font-medium mt-1">Listes</span>
+                <span className="text-[10px] font-medium mt-1">{t('nav_lists')}</span>
               </NavLink>
               <NavLink to="/categories" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Layers size={24} />
-                <span className="text-[10px] font-medium mt-1">Rayons</span>
+                <span className="text-[10px] font-medium mt-1">{t('nav_categories')}</span>
               </NavLink>
               <NavLink to="/articles" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Tag size={24} />
-                <span className="text-[10px] font-medium mt-1">Articles</span>
+                <span className="text-[10px] font-medium mt-1">{t('nav_articles')}</span>
               </NavLink>
               <NavLink to="/stores" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Store size={24} />
-                <span className="text-[10px] font-medium mt-1">Magasins</span>
+                <span className="text-[10px] font-medium mt-1">{t('nav_stores')}</span>
               </NavLink>
               <NavLink to="/settings" className={({ isActive }) => `flex flex-col items-center p-2 rounded-xl transition-all ${isActive ? 'text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-800' : 'text-gray-400 dark:text-slate-500 hover:text-primary-400'}`}>
                 <Settings size={24} />
-                <span className="text-[10px] font-medium mt-1">Param.</span>
+                <span className="text-[10px] font-medium mt-1">{t('nav_settings')}</span>
               </NavLink>
             </div>
           </nav>

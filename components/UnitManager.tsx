@@ -9,7 +9,7 @@ interface UnitManagerProps {
 }
 
 export const UnitManager: React.FC<UnitManagerProps> = ({ value, onChange }) => {
-  const { units, addUnit, updateUnit, deleteUnit } = useAppContext();
+  const { units, addUnit, updateUnit, deleteUnit, t, t_unit } = useAppContext();
   
   const [modalMode, setModalMode] = useState<'add' | 'edit' | 'delete' | null>(null);
   const [inputValue, setInputValue] = useState('');
@@ -65,11 +65,11 @@ export const UnitManager: React.FC<UnitManagerProps> = ({ value, onChange }) => 
             onChange={e => onChange(e.target.value)}
             className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 min-w-0"
         >
-            {units.map(u => <option key={u} value={u}>{u}</option>)}
+            {units.map(u => <option key={u} value={u}>{t_unit(u)}</option>)}
         </select>
-        <button onClick={handleOpenAdd} className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 flex-shrink-0" title="Ajouter"><Plus size={16}/></button>
-        <button onClick={handleOpenEdit} disabled={!value} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 flex-shrink-0 disabled:opacity-50" title="Modifier"><Edit2 size={16}/></button>
-        <button onClick={handleOpenDelete} disabled={!value} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 flex-shrink-0 disabled:opacity-50" title="Supprimer"><Trash2 size={16}/></button>
+        <button onClick={handleOpenAdd} className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50 flex-shrink-0" title={t('add_unit')}><Plus size={16}/></button>
+        <button onClick={handleOpenEdit} disabled={!value} className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50 flex-shrink-0 disabled:opacity-50" title={t('edit_unit')}><Edit2 size={16}/></button>
+        <button onClick={handleOpenDelete} disabled={!value} className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded hover:bg-red-200 dark:hover:bg-red-900/50 flex-shrink-0 disabled:opacity-50" title={t('delete_unit')}><Trash2 size={16}/></button>
       </div>
 
       {/* Generic Modal Overlay */}
@@ -80,9 +80,9 @@ export const UnitManager: React.FC<UnitManagerProps> = ({ value, onChange }) => 
             {/* Header */}
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white">
-                {modalMode === 'add' && 'Ajouter une unité'}
-                {modalMode === 'edit' && 'Modifier l\'unité'}
-                {modalMode === 'delete' && 'Supprimer l\'unité'}
+                {modalMode === 'add' && t('add_unit')}
+                {modalMode === 'edit' && t('edit_unit')}
+                {modalMode === 'delete' && t('delete_unit')}
               </h3>
               <button onClick={handleClose}><X size={20} className="text-gray-400 hover:text-red-500"/></button>
             </div>
@@ -94,17 +94,17 @@ export const UnitManager: React.FC<UnitManagerProps> = ({ value, onChange }) => 
                   type="text"
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
-                  placeholder="ex: kg, litre, paquet..."
+                  placeholder={t('unit_placeholder')}
                   className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                   autoFocus
                 />
                 <div className="flex justify-end gap-2 mt-2">
-                  <button onClick={handleClose} className="px-4 py-2 text-gray-600 dark:text-slate-400">Annuler</button>
+                  <button onClick={handleClose} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
                   <button 
                     onClick={modalMode === 'add' ? submitAdd : submitEdit}
                     className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
                   >
-                    Valider
+                    {t('validate')}
                   </button>
                 </div>
               </div>
@@ -117,15 +117,15 @@ export const UnitManager: React.FC<UnitManagerProps> = ({ value, onChange }) => 
                     <AlertTriangle size={32} />
                  </div>
                  <p className="text-gray-600 dark:text-slate-300">
-                   Voulez-vous vraiment supprimer l'unité <span className="font-bold">"{value}"</span> ?
+                   {t('delete_unit_confirm')} <span className="font-bold">"{t_unit(value)}"</span> ?
                  </p>
                  <div className="flex justify-center gap-3 mt-2">
-                  <button onClick={handleClose} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300">Annuler</button>
+                  <button onClick={handleClose} className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300">{t('cancel')}</button>
                   <button 
                     onClick={submitDelete}
                     className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 shadow-md"
                   >
-                    Supprimer
+                    {t('delete')}
                   </button>
                 </div>
               </div>

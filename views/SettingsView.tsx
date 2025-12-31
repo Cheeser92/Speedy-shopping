@@ -1,7 +1,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useAppContext } from '../services/AppContext';
-import { Moon, Sun, Palette, Check, Type, Download, UploadCloud, FileJson, Loader2, AlertTriangle, X, Mail } from 'lucide-react';
+import { Moon, Sun, Palette, Check, Type, Download, UploadCloud, FileJson, Loader2, AlertTriangle, X, Mail, Languages } from 'lucide-react';
 import { THEME_DISPLAY_DATA, FONT_SIZES } from '../constants';
 import { ThemeColor, AppFontSize, BackupData } from '../types';
 
@@ -10,7 +10,9 @@ const SettingsView: React.FC = () => {
     darkMode, toggleDarkMode, 
     themeColor, setThemeColor, 
     fontSize, setFontSize,
-    categories, products, stores, shoppingLists, weeklyMenus, units, importData
+    language, setLanguage,
+    categories, products, stores, shoppingLists, weeklyMenus, units, importData,
+    t
   } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -30,7 +32,8 @@ const SettingsView: React.FC = () => {
       preferences: {
         darkMode,
         themeColor,
-        fontSize
+        fontSize,
+        language
       }
     };
 
@@ -117,9 +120,36 @@ const SettingsView: React.FC = () => {
 
   return (
     <div className="p-4 bg-primary-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 pb-24">
-      <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm mb-6">Paramètres</h1>
+      <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm mb-6">{t('settings')}</h1>
       
       <div className="space-y-4">
+          
+          {/* Langue */}
+          <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
+             <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-full bg-primary-100 dark:bg-primary-900 text-primary-600 dark:text-primary-300">
+                    <Languages size={24} />
+                </div>
+                <div>
+                  <h2 className="font-semibold text-slate-800 dark:text-white">{t('language')}</h2>
+                </div>
+             </div>
+             <div className="grid grid-cols-2 gap-3">
+                <button
+                    onClick={() => setLanguage('fr')}
+                    className={`p-3 rounded-xl border transition-all font-medium ${language === 'fr' ? 'bg-primary-50 dark:bg-slate-800 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'border-gray-100 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                >
+                    Français
+                </button>
+                <button
+                    onClick={() => setLanguage('en')}
+                    className={`p-3 rounded-xl border transition-all font-medium ${language === 'en' ? 'bg-primary-50 dark:bg-slate-800 border-primary-500 text-primary-700 dark:text-primary-300 shadow-sm' : 'border-gray-100 dark:border-slate-700 text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-800'}`}
+                >
+                    English
+                </button>
+             </div>
+          </div>
+
           {/* Mode Sombre */}
           <div className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 p-4 transition-colors duration-300">
             <div className="flex items-center justify-between">
@@ -128,9 +158,9 @@ const SettingsView: React.FC = () => {
                     {darkMode ? <Moon size={24} /> : <Sun size={24} />}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-slate-800 dark:text-white">Mode Sombre</h2>
+                  <h2 className="font-semibold text-slate-800 dark:text-white">{t('dark_mode')}</h2>
                   <p className="text-sm text-gray-500 dark:text-slate-400">
-                    {darkMode ? 'Activé' : 'Désactivé'}
+                    {darkMode ? t('on') : t('off')}
                   </p>
                 </div>
               </div>
@@ -153,8 +183,8 @@ const SettingsView: React.FC = () => {
                     <Palette size={24} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-slate-800 dark:text-white">Couleur du thème</h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Personnalisez l'apparence</p>
+                  <h2 className="font-semibold text-slate-800 dark:text-white">{t('theme_color')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{t('customize')}</p>
                 </div>
              </div>
              
@@ -186,8 +216,8 @@ const SettingsView: React.FC = () => {
                     <Type size={24} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-slate-800 dark:text-white">Taille de police</h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Ajustez la taille du texte</p>
+                  <h2 className="font-semibold text-slate-800 dark:text-white">{t('font_size')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{t('adjust_text')}</p>
                 </div>
              </div>
              
@@ -218,8 +248,8 @@ const SettingsView: React.FC = () => {
                     <FileJson size={24} />
                 </div>
                 <div>
-                  <h2 className="font-semibold text-slate-800 dark:text-white">Données</h2>
-                  <p className="text-sm text-gray-500 dark:text-slate-400">Sauvegarde et restauration</p>
+                  <h2 className="font-semibold text-slate-800 dark:text-white">{t('data')}</h2>
+                  <p className="text-sm text-gray-500 dark:text-slate-400">{t('save_restore')}</p>
                 </div>
              </div>
 
@@ -229,7 +259,7 @@ const SettingsView: React.FC = () => {
                     className="flex items-center justify-center gap-2 p-3 rounded-xl border border-primary-200 dark:border-slate-700 bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-slate-700 transition-colors w-full"
                  >
                      <Download size={20} />
-                     <span className="font-medium">Exporter une sauvegarde</span>
+                     <span className="font-medium">{t('export_backup')}</span>
                  </button>
 
                  <div className="relative">
@@ -247,12 +277,12 @@ const SettingsView: React.FC = () => {
                         className="flex items-center justify-center gap-2 p-3 rounded-xl border border-primary-200 dark:border-slate-700 bg-primary-50 dark:bg-slate-800 text-primary-700 dark:text-primary-300 hover:bg-primary-100 dark:hover:bg-slate-700 transition-colors w-full active:scale-95 transform duration-150 disabled:opacity-70 disabled:cursor-not-allowed"
                     >
                         {isLoading ? <Loader2 size={20} className="animate-spin" /> : <UploadCloud size={20} />}
-                        <span className="font-medium">{isLoading ? 'Lecture en cours...' : 'Importer une sauvegarde'}</span>
+                        <span className="font-medium">{isLoading ? 'Lecture en cours...' : t('import_backup')}</span>
                     </button>
                  </div>
              </div>
              <p className="mt-3 text-xs text-gray-400 dark:text-slate-500 text-center">
-                 Le fichier .json contient toutes vos listes, articles, rayons et préférences.
+                 {t('backup_desc')}
              </p>
           </div>
       </div>
@@ -268,7 +298,7 @@ const SettingsView: React.FC = () => {
                 <button onClick={() => setImportCandidate(null)} className="text-gray-400 hover:text-gray-600"><X size={20}/></button>
             </div>
             
-            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">Confirmer la restauration</h3>
+            <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-2">{t('restore_confirm')}</h3>
             
             <div className="text-sm text-gray-600 dark:text-slate-300 space-y-3">
                 <p>
@@ -283,7 +313,7 @@ const SettingsView: React.FC = () => {
                     </ul>
                 </div>
                 <p className="font-semibold text-red-500">
-                    Attention : Cette action va effacer toutes les données actuelles de l'application.
+                    {t('restore_warning')}
                 </p>
             </div>
 
@@ -292,13 +322,13 @@ const SettingsView: React.FC = () => {
                 onClick={() => setImportCandidate(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmImport}
                 className="px-4 py-2 bg-primary-600 text-white rounded-lg font-medium hover:bg-primary-700 shadow-md"
               >
-                Restaurer les données
+                {t('restore_btn')}
               </button>
             </div>
           </div>
@@ -307,7 +337,7 @@ const SettingsView: React.FC = () => {
 
       {/* Footer Credits & Contact */}
       <div className="mt-10 mb-6 text-center">
-        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">Speedy shopping v1.3.4</p>
+        <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-1">Speedy shopping v1.4.0</p>
         <p className="text-xs text-gray-400 dark:text-slate-500">
             Développé par <span className="text-primary-600 dark:text-primary-400 font-medium">Cheeser92</span>
         </p>

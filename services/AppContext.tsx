@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS } from '../constants';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language } from '../types';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS } from '../constants';
 
 interface AppState {
   categories: Category[];
@@ -13,6 +13,7 @@ interface AppState {
   darkMode: boolean;
   themeColor: ThemeColor;
   fontSize: AppFontSize;
+  language: Language;
 }
 
 interface AppContextType extends AppState {
@@ -42,7 +43,13 @@ interface AppContextType extends AppState {
   toggleDarkMode: () => void;
   setThemeColor: (color: ThemeColor) => void;
   setFontSize: (size: AppFontSize) => void;
+  setLanguage: (lang: Language) => void;
   importData: (data: BackupData) => void;
+  // Translation helpers
+  t: (key: keyof typeof TRANSLATIONS['fr']) => string;
+  t_cat: (name: string) => string;
+  t_prod: (name: string) => string;
+  t_unit: (name: string) => string;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -66,6 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [darkMode, setDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
   const [fontSize, setFontSize] = useState<AppFontSize>('medium');
+  const [language, setLanguage] = useState<Language>('fr');
   const [loaded, setLoaded] = useState(false);
 
   // Load data from localStorage or init defaults
@@ -79,6 +87,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedDarkMode = localStorage.getItem('darkMode');
     const savedThemeColor = localStorage.getItem('themeColor');
     const savedFontSize = localStorage.getItem('fontSize');
+    const savedLanguage = localStorage.getItem('language');
 
     let initialCategories: Category[] = [];
 
@@ -154,6 +163,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             setFontSize('medium');
         }
     }
+
+    if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
+      setLanguage(savedLanguage as Language);
+    }
     
     setLoaded(true);
   }, []);
@@ -170,8 +183,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       localStorage.setItem('themeColor', themeColor);
       localStorage.setItem('fontSize', fontSize);
+      localStorage.setItem('language', language);
     }
-  }, [categories, products, stores, shoppingLists, weeklyMenus, units, darkMode, themeColor, fontSize, loaded]);
+  }, [categories, products, stores, shoppingLists, weeklyMenus, units, darkMode, themeColor, fontSize, language, loaded]);
 
   // Apply Dark Mode Class
   useEffect(() => {
@@ -191,19 +205,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [themeColor]);
 
-  // Sort categories alphabetically for display
-  const sortedCategories = useMemo(() => {
-    return [...categories].sort((a, b) => a.name.localeCompare(b.name));
-  }, [categories]);
+  // Translation Functions
+  const t = (key: keyof typeof TRANSLATIONS['fr']): string => {
+    return TRANSLATIONS[language][key] || key;
+  };
 
-  // Sort units alphabetically for display
+  const t_cat = (name: string): string => {
+    if (language === 'en' && CATEGORY_TRANSLATIONS[name]) {
+      return CATEGORY_TRANSLATIONS[name];
+    }
+    return name;
+  };
+
+  const t_prod = (name: string): string => {
+    if (language === 'en' && PRODUCT_TRANSLATIONS[name]) {
+      return PRODUCT_TRANSLATIONS[name];
+    }
+    return name;
+  };
+
+  const t_unit = (name: string): string => {
+    if (language === 'en' && UNIT_TRANSLATIONS[name]) {
+      return UNIT_TRANSLATIONS[name];
+    }
+    return name;
+  };
+
+  // Sort categories alphabetically for display (localized)
+  const sortedCategories = useMemo(() => {
+    return [...categories].sort((a, b) => t_cat(a.name).localeCompare(t_cat(b.name)));
+  }, [categories, language]);
+
+  // Sort units alphabetically for display (localized)
   const sortedUnits = useMemo(() => {
     return [...units].sort((a: string, b: string) => {
         if (a === 'Aucune') return -1;
         if (b === 'Aucune') return 1;
-        return a.localeCompare(b, 'fr', { sensitivity: 'base' });
+        return t_unit(a).localeCompare(t_unit(b), language === 'fr' ? 'fr' : 'en', { sensitivity: 'base' });
     });
-  }, [units]);
+  }, [units, language]);
 
   const addCategory = (name: string, iconName: string) => {
     const newCat: Category = { id: generateId(), name, iconName };
@@ -386,6 +426,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (data.preferences.darkMode !== undefined) setDarkMode(!!data.preferences.darkMode);
           if (data.preferences.themeColor) setThemeColor(data.preferences.themeColor);
           if (data.preferences.fontSize) setFontSize(data.preferences.fontSize);
+          if (data.preferences.language) setLanguage(data.preferences.language);
       }
   };
 
@@ -394,15 +435,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       categories: sortedCategories,
       products, stores, shoppingLists, weeklyMenus,
       units: sortedUnits,
-      darkMode, themeColor, fontSize,
+      darkMode, themeColor, fontSize, language,
       addCategory, updateCategory, deleteCategory,
       addProduct, updateProduct, deleteProduct,
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
       addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu,
       addUnit, updateUnit, deleteUnit,
-      toggleDarkMode, setThemeColor, setFontSize,
-      importData
+      toggleDarkMode, setThemeColor, setFontSize, setLanguage,
+      importData,
+      t, t_cat, t_prod, t_unit
     }}>
       {children}
     </AppContext.Provider>

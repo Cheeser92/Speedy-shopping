@@ -9,7 +9,7 @@ import { ShoppingListItem } from '../types';
 const ActiveShoppingView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { shoppingLists, updateShoppingList, products, categories, stores } = useAppContext();
+  const { shoppingLists, updateShoppingList, products, categories, stores, t, t_cat, t_prod, t_unit } = useAppContext();
   
   const list = shoppingLists.find(l => l.id === id);
   const [showFireworks, setShowFireworks] = useState(false);
@@ -107,7 +107,7 @@ const ActiveShoppingView: React.FC = () => {
                     style={{ width: `${progress}%` }}
                  />
                  <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-slate-700 dark:text-slate-200 drop-shadow-sm mix-blend-difference filter invert-0 dark:invert">
-                    {itemsRemaining === 0 ? 'Terminé !' : `${itemsRemaining} restant(s)`}
+                    {itemsRemaining === 0 ? t('done') : `${itemsRemaining} ${t('remaining')}`}
                  </span>
              </div>
         </div>
@@ -116,7 +116,7 @@ const ActiveShoppingView: React.FC = () => {
             onClick={clearChecked} 
             disabled={checkedCount === 0}
             className={`p-2 rounded-full transition-colors ${checkedCount > 0 ? 'bg-red-50 dark:bg-red-900/30 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/50' : 'bg-gray-100 dark:bg-slate-800 text-gray-300 dark:text-slate-600 cursor-not-allowed'}`} 
-            title="Effacer les articles barrés"
+            title={t('clear_checked')}
         >
            <Eraser size={24} />
         </button>
@@ -137,7 +137,7 @@ const ActiveShoppingView: React.FC = () => {
                 <div key={category.id}>
                     <h3 className="flex items-center gap-2 text-xl font-bold text-primary-700 dark:text-primary-400 mb-3 border-b-2 border-primary-100 dark:border-slate-800 pb-1">
                         <IconComponent name={category.iconName} size={28} />
-                        {category.name}
+                        {t_cat(category.name)}
                         <span className="ml-auto text-sm bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full">{categoryTotal} €</span>
                     </h3>
                     <div className="space-y-3">
@@ -151,10 +151,10 @@ const ActiveShoppingView: React.FC = () => {
                                     onClick={() => toggleCheck(item.productId)}
                                     className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md border-l-8 border-primary-500 dark:border-primary-400 flex justify-between items-center active:scale-95 transition-transform cursor-pointer"
                                 >
-                                    <span className="text-xl font-medium text-slate-800 dark:text-slate-100">{product.name}</span>
+                                    <span className="text-xl font-medium text-slate-800 dark:text-slate-100">{t_prod(product.name)}</span>
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{item.quantity}</span>
-                                        <span className="text-sm font-medium text-primary-400 dark:text-primary-300">{displayUnit}</span>
+                                        <span className="text-sm font-medium text-primary-400 dark:text-primary-300">{t_unit(displayUnit)}</span>
                                     </div>
                                 </div>
                             )
@@ -168,7 +168,7 @@ const ActiveShoppingView: React.FC = () => {
          {activeGroups.length > 0 && checkedGroups.length > 0 && (
              <div className="my-8 flex items-center justify-center text-gray-300 dark:text-slate-700">
                  <span className="border-t border-gray-300 dark:border-slate-700 w-full"></span>
-                 <span className="px-4 text-sm font-medium uppercase tracking-widest">Terminé</span>
+                 <span className="px-4 text-sm font-medium uppercase tracking-widest">{t('done')}</span>
                  <span className="border-t border-gray-300 dark:border-slate-700 w-full"></span>
              </div>
          )}
@@ -177,7 +177,7 @@ const ActiveShoppingView: React.FC = () => {
          <div className="space-y-4 opacity-60 grayscale transition-all duration-500">
             {checkedGroups.map(({ category, items }) => (
                 <div key={category.id + '-checked'}>
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-slate-500 mb-2 pl-2">{category.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-slate-500 mb-2 pl-2">{t_cat(category.name)}</h3>
                      <div className="space-y-2">
                         {items.map(item => {
                              const product = products.find(p => p.id === item.productId);
@@ -188,7 +188,7 @@ const ActiveShoppingView: React.FC = () => {
                                      onClick={() => toggleCheck(item.productId)}
                                      className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg flex justify-between items-center cursor-pointer border border-transparent hover:border-gray-300 dark:hover:border-slate-600"
                                  >
-                                     <span className="text-lg line-through text-gray-500 dark:text-slate-400">{product.name}</span>
+                                     <span className="text-lg line-through text-gray-500 dark:text-slate-400">{t_prod(product.name)}</span>
                                      <RotateCcw size={16} className="text-gray-400 dark:text-slate-500" />
                                  </div>
                              )
@@ -202,13 +202,13 @@ const ActiveShoppingView: React.FC = () => {
          {showFireworks && (
             <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex flex-col items-center justify-center animate-fade-in p-6 text-center">
                  <div className="text-6xl mb-4 animate-bounce">🎆 🎇</div>
-                 <h2 className="text-3xl font-extrabold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">Courses Terminées !</h2>
-                 <p className="text-gray-300 mb-8">Bravo, vous avez tout trouvé.</p>
+                 <h2 className="text-3xl font-extrabold text-white mb-4 bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-orange-500">{t('congrats')}</h2>
+                 <p className="text-gray-300 mb-8">{t('bravo')}</p>
                  <button 
                     onClick={() => { setShowFireworks(false); navigate('/'); }}
                     className="bg-white text-primary-600 px-8 py-3 rounded-full font-bold text-lg hover:bg-primary-50 shadow-xl transform transition hover:scale-105"
                  >
-                    OK
+                    {t('ok')}
                  </button>
             </div>
          )}

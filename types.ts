@@ -74,6 +74,7 @@ export interface WeeklyMenu {
 
 export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
 export type AppFontSize = 'small' | 'medium' | 'large';
+export type Language = 'fr' | 'en';
 
 export interface BackupData {
   version: number;
@@ -88,5 +89,6 @@ export interface BackupData {
     darkMode: boolean;
     themeColor: ThemeColor;
     fontSize: AppFontSize;
+    language: Language;
   };
 }

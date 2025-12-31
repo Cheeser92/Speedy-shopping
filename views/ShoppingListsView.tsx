@@ -8,20 +8,12 @@ import { WeeklyMenu } from '../types';
 type ViewMode = 'menus' | 'shopping';
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const DAYS_LABELS: Record<string, string> = {
-  monday: 'Lundi',
-  tuesday: 'Mardi',
-  wednesday: 'Mercredi',
-  thursday: 'Jeudi',
-  friday: 'Vendredi',
-  saturday: 'Samedi',
-  sunday: 'Dimanche'
-};
 
 const ShoppingListsView: React.FC = () => {
   const { 
     shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList, products,
-    weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu
+    weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu,
+    t
   } = useAppContext();
   
   const [viewMode, setViewMode] = useState<ViewMode>('menus'); // Default to menus
@@ -192,7 +184,7 @@ const ShoppingListsView: React.FC = () => {
       {/* Title Header & Add Button */}
       <div className="flex justify-between items-center mb-1">
         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm leading-tight">
-          Mes Listes
+          {t('my_lists')}
         </h1>
         
         {/* Add Button */}
@@ -200,12 +192,12 @@ const ShoppingListsView: React.FC = () => {
             onClick={() => viewMode === 'menus' ? openMenuModal() : openListModal()}
             className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600 font-medium transition-colors"
         >
-            <Plus size={18} className="mr-1" /> {viewMode === 'menus' ? 'Menu' : 'Course'}
+            <Plus size={18} className="mr-1" /> {viewMode === 'menus' ? t('new_menu') : t('new_list')}
         </button>
       </div>
 
       <p className="text-lg font-medium text-primary-600 dark:text-primary-400 mb-6">
-          {viewMode === 'menus' ? 'Menus de la semaine' : 'Courses'}
+          {viewMode === 'menus' ? t('menus') : t('shopping')}
       </p>
 
       {/* Controls & Filters */}
@@ -215,7 +207,7 @@ const ShoppingListsView: React.FC = () => {
                   <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
                   <input 
                       type="text" 
-                      placeholder={viewMode === 'menus' ? "Rechercher un menu..." : "Rechercher une liste..."}
+                      placeholder={viewMode === 'menus' ? t('search_menu') : t('search_list')}
                       value={searchTerm}
                       onChange={e => {
                           setSearchTerm(e.target.value);
@@ -228,10 +220,10 @@ const ShoppingListsView: React.FC = () => {
                   <button 
                     onClick={toggleRandomMenu}
                     className={`p-2.5 rounded-xl border transition-all shadow-sm flex items-center gap-2 font-medium ${randomMenuId ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-700 hover:border-primary-400'}`}
-                    title="Menu aléatoire"
+                    title={t('random')}
                   >
                       <Shuffle size={18} />
-                      <span className="hidden sm:inline">Aléatoire</span>
+                      <span className="hidden sm:inline">{t('random')}</span>
                   </button>
               )}
           </div>
@@ -243,20 +235,20 @@ const ShoppingListsView: React.FC = () => {
                     onClick={() => { setViewMode('menus'); setRandomMenuId(null); }}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    Menus de la semaine
+                    {t('menus')}
                   </button>
                   <button 
                     onClick={() => setViewMode('shopping')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'shopping' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    Courses
+                    {t('shopping')}
                   </button>
               </div>
               
               {/* Random Selection Hint Text */}
               {viewMode === 'menus' && randomMenuId && (
                   <p className="text-center text-sm font-semibold text-primary-600 dark:text-primary-400 animate-fade-in">
-                      Vous pourriez faire pour cette semaine
+                      {t('random_hint')}
                   </p>
               )}
           </div>
@@ -278,7 +270,7 @@ const ShoppingListsView: React.FC = () => {
                     
                     <div className="mt-4 flex items-center justify-between">
                         <span className="flex items-center text-xs text-gray-400 dark:text-slate-500">
-                            <Calendar size={12} className="mr-1" /> {menu.createdAt}
+                            <Calendar size={12} className="mr-1" /> {t('created_at')} {menu.createdAt}
                         </span>
                         
                         <div className="flex items-center gap-1 pl-2 border-l border-gray-100 dark:border-slate-700 ml-1">
@@ -339,18 +331,18 @@ const ShoppingListsView: React.FC = () => {
       {isListModalOpen && (
            <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
-                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{editingListId ? 'Modifier la liste' : 'Nouvelle liste'}</h3>
+                 <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{editingListId ? t('edit_list') : t('new_list')}</h3>
                  <input
                   type="text"
-                  placeholder="Nom de la liste..."
+                  placeholder={t('list_name')}
                   value={listName}
                   onChange={(e) => setListName(e.target.value)}
                   className="w-full p-2 mb-4 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:border-primary-500 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                   autoFocus
                 />
                 <div className="flex justify-end gap-3">
-                    <button onClick={() => setIsListModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">Annuler</button>
-                    <button onClick={handleSaveList} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">Enregistrer</button>
+                    <button onClick={() => setIsListModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                    <button onClick={handleSaveList} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">{t('save')}</button>
                 </div>
              </div>
            </div>
@@ -364,7 +356,7 @@ const ShoppingListsView: React.FC = () => {
                 <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900 rounded-t-xl">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                         <Utensils size={18} />
-                        {editingMenuId ? 'Modifier le menu' : 'Nouveau menu'}
+                        {editingMenuId ? t('edit_menu') : t('new_menu')}
                     </h3>
                     <button onClick={() => setIsMenuModalOpen(false)}><X className="text-gray-400 hover:text-red-500" /></button>
                 </div>
@@ -373,10 +365,10 @@ const ShoppingListsView: React.FC = () => {
                 <div className="flex-1 overflow-y-auto p-4">
                     {/* Name Input */}
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nom du menu</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('menu_name')}</label>
                         <input
                             type="text"
-                            placeholder="Ex: Semaine 12, Menu Printemps..."
+                            placeholder={t('menu_placeholder')}
                             value={menuFormData.name}
                             onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})}
                             className={inputClass}
@@ -391,7 +383,7 @@ const ShoppingListsView: React.FC = () => {
                                 onClick={() => setActiveMenuDayTab(dayKey)}
                                 className={`px-3 py-1.5 rounded-t-lg text-sm font-medium whitespace-nowrap transition-colors border-b-2 ${activeMenuDayTab === dayKey ? 'border-primary-500 text-primary-600 dark:text-primary-400 bg-primary-50 dark:bg-slate-700' : 'border-transparent text-gray-500 dark:text-slate-500 hover:text-gray-700 dark:hover:text-slate-300'}`}
                             >
-                                {DAYS_LABELS[dayKey].substring(0, 3)}.
+                                {t(dayKey as any).substring(0, 3)}.
                             </button>
                         ))}
                     </div>
@@ -400,21 +392,21 @@ const ShoppingListsView: React.FC = () => {
                     <div className="space-y-6 animate-fade-in">
                          {/* Lunch */}
                          <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-100 dark:border-orange-900/30">
-                             <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2 flex items-center gap-1 text-sm uppercase">Midi</h4>
+                             <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2 flex items-center gap-1 text-sm uppercase">{t('lunch')}</h4>
                              <div className="space-y-2">
-                                <input placeholder="Entrée" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'starter', e.target.value)} className={inputClass} />
-                                <input placeholder="Plat principal" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'main', e.target.value)} className={`${inputClass} font-medium`} />
-                                <input placeholder="Dessert" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'dessert', e.target.value)} className={inputClass} />
+                                <input placeholder={t('starter')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'starter', e.target.value)} className={inputClass} />
+                                <input placeholder={t('main_dish')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'main', e.target.value)} className={`${inputClass} font-medium`} />
+                                <input placeholder={t('dessert')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'dessert', e.target.value)} className={inputClass} />
                              </div>
                          </div>
 
                          {/* Dinner */}
                          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
-                             <h4 className="font-bold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-1 text-sm uppercase">Soir</h4>
+                             <h4 className="font-bold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-1 text-sm uppercase">{t('dinner')}</h4>
                              <div className="space-y-2">
-                                <input placeholder="Entrée" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'starter', e.target.value)} className={inputClass} />
-                                <input placeholder="Plat principal" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'main', e.target.value)} className={`${inputClass} font-medium`} />
-                                <input placeholder="Dessert" value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'dessert', e.target.value)} className={inputClass} />
+                                <input placeholder={t('starter')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'starter', e.target.value)} className={inputClass} />
+                                <input placeholder={t('main_dish')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'main', e.target.value)} className={`${inputClass} font-medium`} />
+                                <input placeholder={t('dessert')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'dessert', e.target.value)} className={inputClass} />
                              </div>
                          </div>
                     </div>
@@ -422,8 +414,8 @@ const ShoppingListsView: React.FC = () => {
 
                 {/* Footer */}
                 <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-b-xl flex justify-end gap-3">
-                    <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">Annuler</button>
-                    <button onClick={handleSaveMenu} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">Enregistrer</button>
+                    <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                    <button onClick={handleSaveMenu} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">{t('save')}</button>
                 </div>
             </div>
          </div>
@@ -437,10 +429,10 @@ const ShoppingListsView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">Supprimer ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">{t('delete_confirm')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
-                 <br/><span className="text-xs text-red-400 mt-1 block">Cette action est irréversible.</span>
+                 {t('sure_delete')} <span className="font-semibold">"{deleteConfirm.name}"</span> ?
+                 <br/><span className="text-xs text-red-400 mt-1 block">{t('delete_irreversible')}</span>
                </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -448,13 +440,13 @@ const ShoppingListsView: React.FC = () => {
                 onClick={() => setDeleteConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Supprimer
+                {t('delete')}
               </button>
             </div>
           </div>

@@ -12,7 +12,7 @@ const ListDetailView: React.FC = () => {
   const navigate = useNavigate();
   const { 
       shoppingLists, updateShoppingList, products, categories, stores, addProduct,
-      units
+      units, t, t_cat, t_prod, t_unit, language
   } = useAppContext();
   
   const list = shoppingLists.find(l => l.id === id);
@@ -72,9 +72,9 @@ const ListDetailView: React.FC = () => {
     const lower = searchTerm.toLowerCase();
     const existingIds = list?.items.map(i => i.productId) || [];
     return products
-      .filter(p => !existingIds.includes(p.id) && p.name.toLowerCase().includes(lower))
+      .filter(p => !existingIds.includes(p.id) && t_prod(p.name).toLowerCase().includes(lower))
       .slice(0, 5);
-  }, [searchTerm, products, list]);
+  }, [searchTerm, products, list, t_prod]);
 
   const handleAddItem = (productId: string) => {
     if (list) {
@@ -181,7 +181,7 @@ const ListDetailView: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-500 dark:text-slate-400 whitespace-nowrap">Magasin :</span>
+          <span className="text-sm font-medium text-gray-500 dark:text-slate-400 whitespace-nowrap">{t('store')} :</span>
           <select 
             value={currentStoreId} 
             onChange={(e) => handleStoreChange(e.target.value)}
@@ -198,8 +198,8 @@ const ListDetailView: React.FC = () => {
       <div className="flex-1 overflow-y-auto p-4 pb-52">
         {organizedItems.length === 0 ? (
           <div className="text-center text-gray-400 dark:text-slate-500 mt-10">
-            <p>La liste est vide.</p>
-            <p className="text-sm">Ajoutez des produits ci-dessous.</p>
+            <p>{t('list_empty')}</p>
+            <p className="text-sm">{t('add_items_below')}</p>
           </div>
         ) : (
           organizedItems.map(({ category, items }) => {
@@ -216,7 +216,7 @@ const ListDetailView: React.FC = () => {
               >
                 <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold">
                   <IconComponent name={category.iconName} size={18} className="text-primary-500 dark:text-primary-400" />
-                  {category.name}
+                  {t_cat(category.name)}
                   <div className="flex gap-2 ml-1">
                     <span className="text-xs bg-gray-200 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{items.length}</span>
                     <span className="text-xs bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-full">{categoryTotal} €</span>
@@ -236,7 +236,7 @@ const ListDetailView: React.FC = () => {
 
                     return (
                       <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 gap-2">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">{product.name}</span>
+                        <span className="text-slate-700 dark:text-slate-300 font-medium">{t_prod(product.name)}</span>
                         
                         <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
                            {/* Quantity Controls */}
@@ -263,7 +263,7 @@ const ListDetailView: React.FC = () => {
                                className="p-1 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded text-sm text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[100px]"
                            >
                                {units.map(u => (
-                                   <option key={u} value={u}>{u}</option>
+                                   <option key={u} value={u}>{t_unit(u)}</option>
                                ))}
                            </select>
 
@@ -294,7 +294,7 @@ const ListDetailView: React.FC = () => {
             onClick={() => navigate(`/shop/${id}`)}
             className="w-full mb-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform hover:-translate-y-0.5 transition-all"
         >
-          <Play size={20} fill="currentColor" /> Démarrer les courses
+          <Play size={20} fill="currentColor" /> {t('start_shopping')}
         </button>
 
         {/* Add Item Input */}
@@ -303,7 +303,7 @@ const ListDetailView: React.FC = () => {
               <Search className="absolute left-3 top-3 text-gray-400" size={18} />
               <input
                 type="text"
-                placeholder="Ajouter un article..."
+                placeholder={t('add_item')}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 bg-primary-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-primary-500 outline-none shadow-inner text-primary-900 dark:text-primary-100 placeholder-primary-400 dark:placeholder-slate-500"
@@ -319,18 +319,18 @@ const ListDetailView: React.FC = () => {
                   onClick={() => handleAddItem(p.id)}
                   className="w-full text-left p-3 hover:bg-primary-50 dark:hover:bg-slate-700 border-b last:border-0 border-gray-50 dark:border-slate-700 flex items-center justify-start gap-2"
                 >
-                  <span className="font-medium text-slate-700 dark:text-slate-200">{p.name}</span>
-                  <span className="text-sm text-gray-500 dark:text-slate-400">({categories.find(c => c.id === p.categoryId)?.name})</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-200">{t_prod(p.name)}</span>
+                  <span className="text-sm text-gray-500 dark:text-slate-400">({t_cat(categories.find(c => c.id === p.categoryId)?.name || '')})</span>
                 </button>
               ))}
               
-              {searchTerm.trim().length > 0 && !productSuggestions.some(p => p.name.toLowerCase() === searchTerm.toLowerCase()) && (
+              {searchTerm.trim().length > 0 && !productSuggestions.some(p => t_prod(p.name).toLowerCase() === searchTerm.toLowerCase()) && (
                   <button 
                      onClick={openCreateModal}
                      className="w-full text-left p-3 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold border-t border-gray-100 dark:border-slate-700 flex items-center gap-2"
                   >
                       <Plus size={18} />
-                      Créer "{searchTerm}"
+                      {t('create_item')} "{searchTerm}"
                   </button>
               )}
             </div>
@@ -343,13 +343,13 @@ const ListDetailView: React.FC = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm p-6 animate-pop">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">Nouvel Article</h3>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-white">{t('new_article')}</h3>
                     <button onClick={() => setIsCreateModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
                 </div>
                 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nom</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('name')}</label>
                         <input 
                             type="text" 
                             value={newProductData.name} 
@@ -358,18 +358,18 @@ const ListDetailView: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Rayon</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('aisle')}</label>
                         <select 
                             value={newProductData.categoryId} 
                             onChange={e => setNewProductData({...newProductData, categoryId: e.target.value})}
                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary-500 outline-none bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                         >
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id}>{t_cat(c.name)}</option>)}
                         </select>
                     </div>
                     
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prix</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('price')}</label>
                         <div className="w-1/2">
                             <input 
                                 type="number" step="0.01" inputMode="decimal" placeholder="0.00"
@@ -381,7 +381,7 @@ const ListDetailView: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Unité</label>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('unit')}</label>
                         <UnitManager 
                             value={newProductData.defaultUnit}
                             onChange={(val) => setNewProductData({...newProductData, defaultUnit: val})}
@@ -393,7 +393,7 @@ const ListDetailView: React.FC = () => {
                     onClick={handleCreateAndAdd}
                     className="w-full mt-6 bg-primary-600 text-white font-bold py-3 rounded-xl shadow-lg hover:bg-primary-700"
                 >
-                    Créer et Ajouter
+                    {t('create_and_add')}
                 </button>
             </div>
         </div>

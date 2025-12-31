@@ -8,7 +8,7 @@ import { UnitManager } from '../components/UnitManager';
 const ManageArticlesView: React.FC = () => {
   const { 
       products, categories, addProduct, updateProduct, deleteProduct,
-      units 
+      units, t, t_cat, t_prod, t_unit
   } = useAppContext();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -32,7 +32,7 @@ const ManageArticlesView: React.FC = () => {
     note: ''
   });
 
-  const filteredProducts = products.filter(p => p.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredProducts = products.filter(p => t_prod(p.name).toLowerCase().includes(searchTerm.toLowerCase()));
 
   const startEdit = (p?: Product) => {
     if (p) {
@@ -93,7 +93,10 @@ const ManageArticlesView: React.FC = () => {
       }
   };
 
-  const getCatName = (id: string) => categories.find(c => c.id === id)?.name || 'Inconnu';
+  const getCatName = (id: string) => {
+      const cat = categories.find(c => c.id === id);
+      return cat ? t_cat(cat.name) : t('unknown');
+  };
 
   // --- Fonction pour générer le graphique SVG ---
   const renderTrendChart = (history: PricePoint[]) => {
@@ -140,7 +143,7 @@ const ManageArticlesView: React.FC = () => {
 
     return (
       <div className="mb-6 mt-2">
-         <h4 className="text-center font-bold text-gray-500 dark:text-gray-300 text-sm mb-2 uppercase tracking-wide">Tendance</h4>
+         <h4 className="text-center font-bold text-gray-500 dark:text-gray-300 text-sm mb-2 uppercase tracking-wide">{t('trend')}</h4>
          <div className="w-full bg-gray-50 dark:bg-slate-900 rounded-lg p-2 border border-gray-100 dark:border-slate-700">
              <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-auto overflow-visible">
                 <defs>
@@ -187,16 +190,16 @@ const ManageArticlesView: React.FC = () => {
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Articles</h1>
+          <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">{t('manage_articles')}</h1>
           <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-              <Plus size={18} className="mr-1" /> Article
+              <Plus size={18} className="mr-1" /> {t('new_article')}
           </button>
       </div>
       <div className="relative mb-6">
           <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
           <input 
               type="text" 
-              placeholder="Rechercher un article..." 
+              placeholder={t('search_article')} 
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
@@ -208,7 +211,7 @@ const ManageArticlesView: React.FC = () => {
             <div key={p.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 flex flex-col gap-2">
                 <div className="flex justify-between items-start">
                     <div>
-                        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">{p.name}</h3>
+                        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">{t_prod(p.name)}</h3>
                         <span className="text-xs font-semibold bg-gray-100 dark:bg-slate-800 text-gray-600 dark:text-slate-400 px-2 py-1 rounded-full">{getCatName(p.categoryId)}</span>
                     </div>
                     <div className="flex gap-1">
@@ -218,7 +221,7 @@ const ManageArticlesView: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex justify-between items-end text-sm text-gray-600 dark:text-slate-400 mt-1 border-t border-gray-50 dark:border-slate-800 pt-2">
-                    <span>{p.defaultPrice} € / {p.defaultUnit}</span>
+                    <span>{p.defaultPrice} € / {t_unit(p.defaultUnit)}</span>
                     {p.note && <span className="italic text-gray-400 dark:text-slate-500 text-xs max-w-[50%] truncate">{p.note}</span>}
                 </div>
             </div>
@@ -229,21 +232,21 @@ const ManageArticlesView: React.FC = () => {
       {isModalOpen && (
          <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
-                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? 'Modifier' : 'Créer'} un article</h2>
+                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? t('edit_unit').replace('l\'unité', 'l\'article') : t('new_article')}</h2>
                 
                 <div className="grid gap-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Nom *</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('name')} *</label>
                         <input className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg outline-none focus:border-primary-500 invalid:border-red-500 shadow-inner bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Rayon *</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('aisle')} *</label>
                         <select className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
-                            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                            {categories.map(c => <option key={c.id} value={c.id}>{t_cat(c.name)}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Prix</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('price')}</label>
                         <input 
                             type="number" step="0.01" inputMode="decimal" placeholder="0.00"
                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" 
@@ -252,14 +255,14 @@ const ManageArticlesView: React.FC = () => {
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Unité</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('unit')}</label>
                         <UnitManager 
                             value={formData.defaultUnit}
                             onChange={(val) => setFormData({...formData, defaultUnit: val})}
                         />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Note</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('note')}</label>
                         <div className="relative">
                             <textarea 
                                 className="w-full p-2 pr-8 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" 
@@ -281,8 +284,8 @@ const ManageArticlesView: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-3 mt-6">
-                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">Annuler</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg shadow hover:bg-primary-700">Enregistrer</button>
+                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                    <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg shadow hover:bg-primary-700">{t('save')}</button>
                 </div>
             </div>
          </div>
@@ -293,7 +296,7 @@ const ManageArticlesView: React.FC = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
               <div className="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-5 w-full max-w-sm animate-pop">
                   <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-bold text-slate-800 dark:text-white text-lg">Historique des prix</h3>
+                      <h3 className="font-bold text-slate-800 dark:text-white text-lg">{t('price_history')}</h3>
                       <button onClick={() => setShowHistoryId(null)} className="text-gray-500 hover:text-red-500 bg-gray-100 dark:bg-slate-700 rounded-full p-1"><X size={20}/></button>
                   </div>
                   
@@ -322,9 +325,9 @@ const ManageArticlesView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer l'article ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('delete_confirm')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
+                 {t('sure_delete')} <span className="font-semibold">"{deleteConfirm.name}"</span> ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -332,13 +335,13 @@ const ManageArticlesView: React.FC = () => {
                 onClick={() => setDeleteConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Supprimer
+                {t('delete')}
               </button>
             </div>
           </div>

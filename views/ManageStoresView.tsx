@@ -8,7 +8,7 @@ import { Star, Trash2, ArrowUp, ArrowDown, AlertTriangle, GripVertical, Plus } f
 const ManageStoresView: React.FC = () => {
   const { 
     stores, addStore, updateStore, deleteStore, toggleFavoriteStore, 
-    categories, shoppingLists, deleteShoppingList 
+    categories, shoppingLists, deleteShoppingList, t, t_cat 
   } = useAppContext();
   
   const [selectedStoreId, setSelectedStoreId] = useState<string>(stores[0]?.id || '');
@@ -151,9 +151,9 @@ const ManageStoresView: React.FC = () => {
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 flex flex-col h-screen transition-colors duration-300">
       
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Magasins</h1>
+        <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">{t('manage_stores')}</h1>
          <button onClick={() => setIsCreating(true)} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-            <Plus size={18} className="mr-1" /> Magasin
+            <Plus size={18} className="mr-1" /> {t('new_store')}
          </button>
       </div>
       
@@ -186,7 +186,7 @@ const ManageStoresView: React.FC = () => {
             <div className="flex gap-2 mb-4 animate-fade-in">
                 <input 
                     type="text" 
-                    placeholder="Nom du magasin" 
+                    placeholder={t('store_name')} 
                     className="flex-1 p-2 border rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 border-gray-200 dark:border-slate-600" 
                     value={newStoreName}
                     onChange={e => setNewStoreName(e.target.value)}
@@ -208,7 +208,7 @@ const ManageStoresView: React.FC = () => {
                     className={`flex items-center gap-2 text-sm font-medium ${selectedStore.isFavorite ? 'text-yellow-500 cursor-default' : 'text-gray-400 dark:text-slate-500 hover:text-yellow-500'}`}
                 >
                     <Star size={18} fill={selectedStore.isFavorite ? "currentColor" : "none"} /> 
-                    {selectedStore.isFavorite ? 'Magasin favori' : 'Définir comme favori'}
+                    {selectedStore.isFavorite ? t('favorite_store') : t('set_favorite')}
                 </button>
             </div>
         )}
@@ -218,14 +218,14 @@ const ManageStoresView: React.FC = () => {
       {selectedStore && (
         <div className="flex-1 flex flex-col overflow-hidden">
             <div className="flex justify-between items-center mb-2">
-                 <h2 className="font-semibold text-gray-700 dark:text-slate-300">Ordre des rayons ({activeCategories.length})</h2>
+                 <h2 className="font-semibold text-gray-700 dark:text-slate-300">{t('aisle_order')} ({activeCategories.length})</h2>
                  {availableCategories.length > 0 && (
                      <div className="relative group">
-                         <button className="text-sm text-primary-600 dark:text-primary-400 font-medium flex items-center">+ Ajouter rayon</button>
+                         <button className="text-sm text-primary-600 dark:text-primary-400 font-medium flex items-center">{t('add_aisle')}</button>
                          <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 shadow-xl rounded-lg border dark:border-slate-700 p-1 hidden group-hover:block z-10 max-h-48 overflow-y-auto">
                              {availableCategories.map(c => (
                                  <button key={c.id} onClick={() => addCategoryToStore(c.id)} className="w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-slate-700 text-sm text-slate-700 dark:text-slate-200">
-                                     {c.name}
+                                     {t_cat(c.name)}
                                  </button>
                              ))}
                          </div>
@@ -257,7 +257,7 @@ const ManageStoresView: React.FC = () => {
                             </div>
                             
                             <IconComponent name={cat.iconName} size={18} className="text-gray-500 dark:text-slate-400" />
-                            <span className="font-medium text-slate-700 dark:text-slate-200">{cat.name}</span>
+                            <span className="font-medium text-slate-700 dark:text-slate-200">{t_cat(cat.name)}</span>
                         </div>
                         <div className="flex items-center gap-1">
                             <button onClick={() => moveCategory(index, 'up')} disabled={index === 0} className="p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded disabled:opacity-30 text-gray-400 dark:text-slate-500 hover:text-primary-600"><ArrowUp size={16}/></button>
@@ -278,9 +278,9 @@ const ManageStoresView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer le magasin ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('delete_store_title')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Vous êtes sur le point de supprimer <span className="font-semibold">"{deleteConfirm.name}"</span>.
+                 {t('delete_store_confirm')} <span className="font-semibold">"{deleteConfirm.name}"</span>.
                </p>
                
                {deleteConfirm.count > 0 ? (
@@ -289,7 +289,7 @@ const ManageStoresView: React.FC = () => {
                             Attention :
                         </p>
                         <p className="text-red-600 dark:text-red-400 text-sm">
-                            {deleteConfirm.count} liste{deleteConfirm.count > 1 ? 's' : ''} de courses associée{deleteConfirm.count > 1 ? 's' : ''} ser{deleteConfirm.count > 1 ? 'ont' : 'a'} également supprimée{deleteConfirm.count > 1 ? 's' : ''}.
+                            {deleteConfirm.count} {t('delete_store_warning')}
                         </p>
                     </div>
                ) : (
@@ -301,13 +301,13 @@ const ManageStoresView: React.FC = () => {
                 onClick={() => setDeleteConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Tout supprimer
+                {t('delete')}
               </button>
             </div>
           </div>
@@ -322,12 +322,9 @@ const ManageStoresView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Retirer le rayon ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('remove_aisle_title')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Voulez-vous retirer le rayon <span className="font-semibold">"{removeCatConfirm.name}"</span> de ce magasin ?
-               </p>
-               <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
-                   (La catégorie existera toujours dans les autres magasins et dans la liste globale)
+                 {t('remove_aisle_confirm')} <span className="font-semibold">"{removeCatConfirm.name}"</span> ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -335,13 +332,13 @@ const ManageStoresView: React.FC = () => {
                 onClick={() => setRemoveCatConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmRemoveCategory}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Retirer
+                {t('remove')}
               </button>
             </div>
           </div>
@@ -356,9 +353,9 @@ const ManageStoresView: React.FC = () => {
                <div className="bg-yellow-100 dark:bg-yellow-900/30 p-3 rounded-full mb-3 text-yellow-600 dark:text-yellow-500">
                   <Star size={32} fill="currentColor" />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Changer de magasin favori ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('change_fav_title')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Voulez-vous définir <span className="font-semibold">"{favConfirm.name}"</span> comme magasin principal pour vos listes ?
+                 {t('change_fav_confirm')} <span className="font-semibold">"{favConfirm.name}"</span> {t('favorite_store')} ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -366,13 +363,13 @@ const ManageStoresView: React.FC = () => {
                 onClick={() => setFavConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmSetFavorite}
                 className="px-4 py-2 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 shadow-md"
               >
-                Confirmer
+                {t('confirm')}
               </button>
             </div>
           </div>

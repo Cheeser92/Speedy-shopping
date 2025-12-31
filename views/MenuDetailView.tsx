@@ -6,20 +6,11 @@ import { ArrowLeft, Utensils, Coffee, Moon } from 'lucide-react';
 import { DayMenu } from '../types';
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-const DAYS_LABELS: Record<string, string> = {
-  monday: 'Lundi',
-  tuesday: 'Mardi',
-  wednesday: 'Mercredi',
-  thursday: 'Jeudi',
-  friday: 'Vendredi',
-  saturday: 'Samedi',
-  sunday: 'Dimanche'
-};
 
 const MenuDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { weeklyMenus } = useAppContext();
+  const { weeklyMenus, t } = useAppContext();
   
   const menu = weeklyMenus.find(m => m.id === id);
 
@@ -30,7 +21,7 @@ const MenuDetailView: React.FC = () => {
     const hasContent = meal.starter || meal.main || meal.dessert;
 
     if (!hasContent) {
-        return <div className="text-gray-300 dark:text-slate-600 italic text-xs">Rien de prévu</div>;
+        return <div className="text-gray-300 dark:text-slate-600 italic text-xs">{t('nothing_planned')}</div>;
     }
 
     return (
@@ -64,7 +55,7 @@ const MenuDetailView: React.FC = () => {
           <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-600 dark:text-slate-300 rounded-full hover:bg-gray-100 dark:hover:bg-slate-800"><ArrowLeft /></button>
           <div className="flex-1">
              <h1 className="font-bold text-lg text-slate-800 dark:text-white truncate">{menu.name}</h1>
-             <p className="text-xs text-gray-500 dark:text-gray-400">Créé le {menu.createdAt}</p>
+             <p className="text-xs text-gray-500 dark:text-gray-400">{t('created_at')} {menu.createdAt}</p>
           </div>
           <Utensils className="text-primary-500" size={24} />
       </div>
@@ -77,7 +68,7 @@ const MenuDetailView: React.FC = () => {
                  return (
                      <div key={dayKey} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
                          <div className="bg-primary-50 dark:bg-slate-800 p-2 border-b border-primary-100 dark:border-slate-700">
-                             <h3 className="font-bold text-primary-800 dark:text-primary-200 uppercase tracking-wide text-sm">{DAYS_LABELS[dayKey]}</h3>
+                             <h3 className="font-bold text-primary-800 dark:text-primary-200 uppercase tracking-wide text-sm">{t(dayKey as any)}</h3>
                          </div>
                          <div className="grid grid-cols-1 divide-y dark:divide-slate-800">
                              {/* Midi */}

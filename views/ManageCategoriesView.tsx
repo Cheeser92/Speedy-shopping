@@ -6,7 +6,7 @@ import { IconPickerModal } from '../components/IconPickerModal';
 import { Edit2, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
 const ManageCategoriesView: React.FC = () => {
-  const { categories, addCategory, updateCategory, deleteCategory } = useAppContext();
+  const { categories, addCategory, updateCategory, deleteCategory, t, t_cat } = useAppContext();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   
@@ -53,9 +53,9 @@ const ManageCategoriesView: React.FC = () => {
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Rayons</h1>
+         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">{t('manage_categories')}</h1>
          <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-            <Plus size={18} className="mr-1" /> Rayon
+            <Plus size={18} className="mr-1" /> {t('new_category')}
          </button>
       </div>
 
@@ -66,7 +66,7 @@ const ManageCategoriesView: React.FC = () => {
                     <div className="bg-primary-50 dark:bg-slate-800 p-2 rounded-full text-primary-600 dark:text-primary-400 flex-shrink-0">
                         <IconComponent name={cat.iconName} size={20} />
                     </div>
-                    <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{cat.name}</span>
+                    <span className="font-semibold text-slate-700 dark:text-slate-200 truncate">{t_cat(cat.name)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                     <button onClick={() => startEdit(cat)} className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 p-2 rounded-lg hover:bg-primary-50 dark:hover:bg-slate-800 transition-colors">
@@ -84,10 +84,10 @@ const ManageCategoriesView: React.FC = () => {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center p-4">
             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 animate-pop">
-                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? 'Modifier' : 'Créer'} un rayon</h2>
+                <h2 className="text-xl font-bold mb-4 text-slate-800 dark:text-white">{editingId ? t('edit_category') : t('create_category')}</h2>
                 
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nom *</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('name')} *</label>
                     <input 
                         type="text" 
                         value={name} 
@@ -98,7 +98,7 @@ const ManageCategoriesView: React.FC = () => {
                 </div>
 
                 <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Icône</label>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('icon')}</label>
                     <button 
                         onClick={() => setIsIconPickerOpen(true)}
                         className="flex items-center gap-3 p-2 border border-gray-300 dark:border-slate-600 rounded-lg w-full hover:bg-gray-50 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200"
@@ -109,8 +109,8 @@ const ManageCategoriesView: React.FC = () => {
                 </div>
 
                 <div className="flex justify-end gap-3">
-                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400 font-medium">Annuler</button>
-                    <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium shadow-md hover:bg-primary-700">Enregistrer</button>
+                    <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400 font-medium">{t('cancel')}</button>
+                    <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg font-medium shadow-md hover:bg-primary-700">{t('save')}</button>
                 </div>
             </div>
         </div>
@@ -124,9 +124,9 @@ const ManageCategoriesView: React.FC = () => {
                <div className="bg-red-100 dark:bg-red-900/30 p-3 rounded-full mb-3 text-red-500">
                   <AlertTriangle size={32} />
                </div>
-               <h3 className="text-lg font-bold text-slate-800 dark:text-white">Supprimer le rayon ?</h3>
+               <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('delete_confirm')}</h3>
                <p className="text-gray-600 dark:text-slate-300 mt-2">
-                 Êtes-vous sûr de vouloir supprimer <span className="font-semibold">"{deleteConfirm.name}"</span> ?
+                 {t('sure_delete')} <span className="font-semibold">"{deleteConfirm.name}"</span> ?
                </p>
             </div>
             <div className="flex gap-3 justify-center">
@@ -134,13 +134,13 @@ const ManageCategoriesView: React.FC = () => {
                 onClick={() => setDeleteConfirm(null)}
                 className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-700 dark:text-slate-300 font-medium hover:bg-gray-50 dark:hover:bg-slate-700"
               >
-                Annuler
+                {t('cancel')}
               </button>
               <button 
                 onClick={confirmDelete}
                 className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 shadow-md"
               >
-                Supprimer
+                {t('delete')}
               </button>
             </div>
           </div>
