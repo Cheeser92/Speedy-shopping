@@ -116,7 +116,7 @@ const SettingsView: React.FC = () => {
 
   return (
     <div className="p-4 bg-primary-50 dark:bg-slate-950 min-h-screen transition-colors duration-300 pb-24">
-      <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm mb-6">Paramètres</h1>
+      <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm mb-6">Paramètres</h1>
       
       <div className="space-y-4">
           {/* Mode Sombre */}

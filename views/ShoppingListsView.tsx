@@ -61,7 +61,7 @@ const ShoppingListsView: React.FC = () => {
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">
+        <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">
           Mes Listes
         </h1>
         <button

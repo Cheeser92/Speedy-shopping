@@ -53,7 +53,7 @@ const ManageCategoriesView: React.FC = () => {
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
       <div className="flex justify-between items-center mb-6">
-         <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Catégories</h1>
+         <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Catégories</h1>
          <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
             <Plus size={18} className="mr-1" /> Catégorie
          </button>

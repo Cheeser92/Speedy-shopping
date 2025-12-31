@@ -186,24 +186,21 @@ const ManageArticlesView: React.FC = () => {
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
-      {/* Header & Search */}
-      <div className="sticky top-0 bg-primary-50 dark:bg-slate-950 pt-2 pb-4 z-10 transition-colors duration-300">
-        <div className="flex justify-between items-center mb-4">
-            <h1 className="text-3xl font-extrabold text-slate-800 dark:text-white drop-shadow-sm">Articles</h1>
-            <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
-                <Plus size={18} className="mr-1" /> Article
-            </button>
-        </div>
-        <div className="relative">
-            <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
-            <input 
-                type="text" 
-                placeholder="Rechercher un article..." 
-                value={searchTerm}
-                onChange={e => setSearchTerm(e.target.value)}
-                className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
-            />
-        </div>
+      <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">Articles</h1>
+          <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
+              <Plus size={18} className="mr-1" /> Article
+          </button>
+      </div>
+      <div className="relative mb-6">
+          <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
+          <input 
+              type="text" 
+              placeholder="Rechercher un article..." 
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
+          />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
