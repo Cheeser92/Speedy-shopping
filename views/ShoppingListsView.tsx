@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WeeklyMenu } from '../types';
 
@@ -26,6 +26,7 @@ const ShoppingListsView: React.FC = () => {
   
   const [viewMode, setViewMode] = useState<ViewMode>('menus'); // Default to menus
   const [searchTerm, setSearchTerm] = useState('');
+  const [randomMenuId, setRandomMenuId] = useState<string | null>(null);
   
   // States for List Creation/Edition
   const [isListModalOpen, setIsListModalOpen] = useState(false);
@@ -135,6 +136,18 @@ const ShoppingListsView: React.FC = () => {
       }));
   };
 
+  const toggleRandomMenu = () => {
+    if (randomMenuId) {
+        setRandomMenuId(null);
+    } else {
+        if (weeklyMenus.length > 0) {
+            const randomIndex = Math.floor(Math.random() * weeklyMenus.length);
+            setRandomMenuId(weeklyMenus[randomIndex].id);
+            setSearchTerm(''); // Clear search to show the random item
+        }
+    }
+  };
+
   // --- Generic Delete ---
   const requestDelete = (e: React.MouseEvent, id: string, name: string, type: 'list' | 'menu') => {
     e.stopPropagation();
@@ -147,6 +160,7 @@ const ShoppingListsView: React.FC = () => {
         deleteShoppingList(deleteConfirm.id);
       } else {
         deleteWeeklyMenu(deleteConfirm.id);
+        if (randomMenuId === deleteConfirm.id) setRandomMenuId(null);
       }
       setDeleteConfirm(null);
     }
@@ -164,9 +178,10 @@ const ShoppingListsView: React.FC = () => {
     list.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  const filteredMenus = weeklyMenus.filter(menu => 
-    menu.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Logic: If random mode is active, show only that menu. Otherwise, follow search term.
+  const filteredMenus = randomMenuId 
+    ? weeklyMenus.filter(m => m.id === randomMenuId)
+    : weeklyMenus.filter(menu => menu.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   // Common input class for consistent styling
   const inputClass = "w-full text-sm p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors";
@@ -195,22 +210,37 @@ const ShoppingListsView: React.FC = () => {
 
       {/* Controls & Filters */}
       <div className="flex flex-col gap-4 mb-6">
-          <div className="relative">
-              <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
-              <input 
-                  type="text" 
-                  placeholder={viewMode === 'menus' ? "Rechercher un menu..." : "Rechercher une liste..."}
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
-              />
+          <div className="flex gap-2 items-center">
+              <div className="relative flex-1">
+                  <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
+                  <input 
+                      type="text" 
+                      placeholder={viewMode === 'menus' ? "Rechercher un menu..." : "Rechercher une liste..."}
+                      value={searchTerm}
+                      onChange={e => {
+                          setSearchTerm(e.target.value);
+                          if (randomMenuId) setRandomMenuId(null); // Disable random if user types
+                      }}
+                      className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
+                  />
+              </div>
+              {viewMode === 'menus' && (
+                  <button 
+                    onClick={toggleRandomMenu}
+                    className={`p-2.5 rounded-xl border transition-all shadow-sm flex items-center gap-2 font-medium ${randomMenuId ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-700 hover:border-primary-400'}`}
+                    title="Menu aléatoire"
+                  >
+                      <Shuffle size={18} />
+                      <span className="hidden sm:inline">Aléatoire</span>
+                  </button>
+              )}
           </div>
 
-          <div className="flex justify-center items-center">
+          <div className="flex flex-col justify-center items-center gap-3">
               {/* Filter Pills */}
               <div className="flex gap-2">
                   <button 
-                    onClick={() => setViewMode('menus')}
+                    onClick={() => { setViewMode('menus'); setRandomMenuId(null); }}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
                     Menus de la semaine
@@ -222,6 +252,13 @@ const ShoppingListsView: React.FC = () => {
                     Courses
                   </button>
               </div>
+              
+              {/* Random Selection Hint Text */}
+              {viewMode === 'menus' && randomMenuId && (
+                  <p className="text-center text-sm font-semibold text-primary-600 dark:text-primary-400 animate-fade-in">
+                      Vous pourriez faire pour cette semaine
+                  </p>
+              )}
           </div>
       </div>
 
