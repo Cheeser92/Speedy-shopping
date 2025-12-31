@@ -2,7 +2,8 @@
 {
   "name": "Speedy shopping",
   "short_name": "Speedy",
-  "start_url": ".",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#2563eb",

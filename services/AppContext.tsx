@@ -73,7 +73,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [darkMode, setDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
   const [fontSize, setFontSize] = useState<AppFontSize>('medium');
-  const [language, setLanguage] = useState<Language>('fr');
+  const [language, setLanguage] = useState<Language>('en');
   const [loaded, setLoaded] = useState(false);
 
   // Load data from localStorage or init defaults
