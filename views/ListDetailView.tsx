@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
 import { IconComponent } from '../components/IconComponent';
-import { ArrowLeft, Play, ChevronDown, ChevronUp, Plus, Minus, Search, X, Trash2 } from 'lucide-react';
+import { ArrowLeft, Play, ChevronDown, ChevronUp, Plus, Minus, Search, X, Trash2, AlertTriangle, Edit3 } from 'lucide-react';
 import { ShoppingListItem } from '../types';
 import { UnitManager } from '../components/UnitManager';
 
@@ -20,6 +20,8 @@ const ListDetailView: React.FC = () => {
   const [collapsedCats, setCollapsedCats] = useState<string[]>([]);
   
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [tempItemToConvert, setTempItemToConvert] = useState<ShoppingListItem | null>(null);
+
   const [newProductData, setNewProductData] = useState<{
       name: string;
       categoryId: string;
@@ -43,13 +45,22 @@ const ListDetailView: React.FC = () => {
     if (!list || !currentStore) return [];
 
     const itemsByCat = new Map<string, ShoppingListItem[]>();
-    
+    const unknownItems: ShoppingListItem[] = [];
+
     list.items.forEach(item => {
-      const product = products.find(p => p.id === item.productId);
-      if (product) {
-        const catId = product.categoryId;
-        const current = itemsByCat.get(catId) || [];
-        itemsByCat.set(catId, [...current, item]);
+      if (item.productId) {
+          const product = products.find(p => p.id === item.productId);
+          if (product) {
+            const catId = product.categoryId;
+            const current = itemsByCat.get(catId) || [];
+            itemsByCat.set(catId, [...current, item]);
+          } else {
+             // Product ID exists but not found in DB (should theoretically not happen, but safe fallback)
+             unknownItems.push(item);
+          }
+      } else {
+          // Custom Item (Temporary)
+          unknownItems.push(item);
       }
     });
 
@@ -58,19 +69,29 @@ const ListDetailView: React.FC = () => {
       if (!sortedCats.includes(c.id)) sortedCats.push(c.id);
     });
 
-    return sortedCats.map(catId => {
+    const result = sortedCats.map(catId => {
       const category = categories.find(c => c.id === catId);
       const items = itemsByCat.get(catId) || [];
       if (items.length === 0) return null;
       return { category, items };
     }).filter(g => g !== null) as { category: any, items: ShoppingListItem[] }[];
+    
+    // Add unknown/custom category at the top if there are items
+    if (unknownItems.length > 0) {
+        result.unshift({
+            category: { id: 'unknown', name: 'Non classé / Inconnu', iconName: 'HelpCircle' },
+            items: unknownItems
+        });
+    }
+
+    return result;
 
   }, [list, products, currentStore, categories]);
 
   const productSuggestions = useMemo(() => {
     if (!searchTerm) return [];
     const lower = searchTerm.toLowerCase();
-    const existingIds = list?.items.map(i => i.productId) || [];
+    const existingIds = list?.items.map(i => i.productId).filter(Boolean) || [];
     return products
       .filter(p => !existingIds.includes(p.id) && t_prod(p.name).toLowerCase().includes(lower))
       .slice(0, 5);
@@ -87,34 +108,34 @@ const ListDetailView: React.FC = () => {
     }
   };
 
-  const handleRemoveItem = (productId: string) => {
+  const handleRemoveItem = (item: ShoppingListItem) => {
     if (list) {
       updateShoppingList({
         ...list,
-        items: list.items.filter(i => i.productId !== productId)
+        items: list.items.filter(i => i !== item) // Use reference equality
       });
     }
   };
 
-  const updateItemQuantity = (productId: string, delta: number) => {
+  const updateItemQuantity = (item: ShoppingListItem, delta: number) => {
       if(!list) return;
-      const updatedItems = list.items.map(item => {
-          if(item.productId === productId) {
-              const newQty = Math.max(1, item.quantity + delta);
-              return { ...item, quantity: newQty };
+      const updatedItems = list.items.map(i => {
+          if(i === item) {
+              const newQty = Math.max(1, i.quantity + delta);
+              return { ...i, quantity: newQty };
           }
-          return item;
+          return i;
       });
       updateShoppingList({ ...list, items: updatedItems });
   };
 
-  const updateItemUnit = (productId: string, newUnit: string) => {
+  const updateItemUnit = (item: ShoppingListItem, newUnit: string) => {
       if(!list) return;
-      const updatedItems = list.items.map(item => {
-          if(item.productId === productId) {
-              return { ...item, unit: newUnit };
+      const updatedItems = list.items.map(i => {
+          if(i === item) {
+              return { ...i, unit: newUnit };
           }
-          return item;
+          return i;
       });
       updateShoppingList({ ...list, items: updatedItems });
   };
@@ -123,13 +144,14 @@ const ListDetailView: React.FC = () => {
     setCollapsedCats(prev => prev.includes(catId) ? prev.filter(c => c !== catId) : [...prev, catId]);
   };
 
-  const openCreateModal = () => {
+  const openCreateModal = (prefillName?: string, itemToConvert?: ShoppingListItem) => {
     setNewProductData({
-        name: searchTerm,
+        name: prefillName || searchTerm,
         categoryId: categories[0]?.id || '',
         defaultPrice: '',
-        defaultUnit: units.includes('Aucune') ? 'Aucune' : (units[0] || '')
+        defaultUnit: itemToConvert?.unit || (units.includes('Aucune') ? 'Aucune' : (units[0] || ''))
     });
+    setTempItemToConvert(itemToConvert || null);
     setIsCreateModalOpen(true);
   };
 
@@ -153,19 +175,30 @@ const ListDetailView: React.FC = () => {
      });
 
      if (list) {
+        let newItems = [...list.items];
+        
+        // If we are converting a temp item, remove it first
+        if (tempItemToConvert) {
+            newItems = newItems.filter(i => i !== tempItemToConvert);
+        }
+
+        // Add the new real product
+        newItems.push({ 
+            productId: newId, 
+            quantity: tempItemToConvert ? tempItemToConvert.quantity : 1, 
+            unit: newProductData.defaultUnit, 
+            isChecked: false 
+        });
+
         updateShoppingList({
             ...list,
-            items: [...list.items, { 
-                productId: newId, 
-                quantity: 1, 
-                unit: newProductData.defaultUnit, 
-                isChecked: false 
-            }]
+            items: newItems
         });
         setSearchTerm('');
      }
 
      setIsCreateModalOpen(false);
+     setTempItemToConvert(null);
   };
 
   if (!list) return <div className="text-center p-10 dark:text-white">Liste introuvable</div>;
@@ -203,53 +236,67 @@ const ListDetailView: React.FC = () => {
           </div>
         ) : (
           organizedItems.map(({ category, items }) => {
-            const categoryTotal = items.reduce((acc, item) => {
+            // Check if it's the unknown category
+            const isUnknownCategory = category.id === 'unknown';
+
+            const categoryTotal = isUnknownCategory ? '0.00' : items.reduce((acc, item) => {
                 const product = products.find(p => p.id === item.productId);
                 return acc + (item.quantity * (product?.defaultPrice || 0));
             }, 0).toFixed(2);
 
             return (
-            <div key={category.id} className="mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
+            <div key={category.id} className={`mb-4 bg-white dark:bg-slate-900 rounded-xl shadow-sm border overflow-hidden ${isUnknownCategory ? 'border-orange-300 dark:border-orange-800' : 'border-primary-100 dark:border-slate-800'}`}>
               <div 
                 onClick={() => toggleCatCollapse(category.id)}
-                className="flex items-center justify-between p-3 bg-primary-600 dark:bg-primary-700 cursor-pointer hover:bg-primary-700 dark:hover:bg-primary-600 transition-colors"
+                className={`flex items-center justify-between p-3 cursor-pointer transition-colors ${isUnknownCategory ? 'bg-orange-100 dark:bg-orange-900/50 hover:bg-orange-200 dark:hover:bg-orange-900/70' : 'bg-primary-600 dark:bg-primary-700 hover:bg-primary-700 dark:hover:bg-primary-600'}`}
               >
-                <div className="flex items-center gap-2 text-white font-bold">
-                  <IconComponent name={category.iconName} size={18} className="text-white" />
-                  {t_cat(category.name)}
+                <div className={`flex items-center gap-2 font-bold ${isUnknownCategory ? 'text-orange-800 dark:text-orange-200' : 'text-white'}`}>
+                  <IconComponent name={category.iconName} size={18} className={isUnknownCategory ? 'text-orange-800 dark:text-orange-200' : 'text-white'} />
+                  {isUnknownCategory ? "Non présent dans vos articles" : t_cat(category.name)}
                   <div className="flex gap-2 ml-1">
-                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{items.length}</span>
-                    <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{categoryTotal} €</span>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${isUnknownCategory ? 'bg-orange-200 dark:bg-orange-800' : 'bg-white/20 text-white'}`}>{items.length}</span>
+                    {!isUnknownCategory && <span className="text-xs bg-white/20 text-white px-2 py-0.5 rounded-full">{categoryTotal} €</span>}
                   </div>
                 </div>
-                <div className="text-white/80">
+                <div className={isUnknownCategory ? 'text-orange-800 dark:text-orange-200' : 'text-white/80'}>
                   {collapsedCats.includes(category.id) ? <ChevronDown size={16} /> : <ChevronUp size={16} />}
                 </div>
               </div>
               
               {!collapsedCats.includes(category.id) && (
                 <div className="divide-y divide-gray-50 dark:divide-slate-800">
-                  {items.map(item => {
-                    const product = products.find(p => p.id === item.productId);
-                    if (!product) return null;
-                    const currentUnit = item.unit || product.defaultUnit || 'Aucune';
+                  {items.map((item, index) => {
+                    const product = item.productId ? products.find(p => p.id === item.productId) : null;
+                    const itemName = product ? t_prod(product.name) : (item.customName || 'Article Inconnu');
+                    const currentUnit = item.unit || product?.defaultUnit || 'Aucune';
 
                     return (
-                      <div key={item.productId} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 gap-2">
-                        <span className="text-slate-700 dark:text-slate-300 font-medium">{t_prod(product.name)}</span>
+                      <div key={index} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 gap-2">
+                        <div className="flex items-center gap-2">
+                             {!product && (
+                                 <button 
+                                    onClick={() => openCreateModal(itemName, item)}
+                                    className="p-1.5 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-md hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                                    title="Créer l'article"
+                                 >
+                                     <Edit3 size={16} />
+                                 </button>
+                             )}
+                             <span className="text-slate-700 dark:text-slate-300 font-medium">{itemName}</span>
+                        </div>
                         
                         <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
                            {/* Quantity Controls - Resized Smaller */}
                            <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10 shadow-sm">
                                <button 
-                                   onClick={() => updateItemQuantity(item.productId, -1)} 
+                                   onClick={() => updateItemQuantity(item, -1)} 
                                    className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg transition-colors"
                                >
                                    <Minus size={18}/>
                                </button>
                                <span className="min-w-[40px] text-center font-bold text-base text-slate-700 dark:text-slate-200">{item.quantity}</span>
                                <button 
-                                   onClick={() => updateItemQuantity(item.productId, 1)} 
+                                   onClick={() => updateItemQuantity(item, 1)} 
                                    className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
                                >
                                    <Plus size={18}/>
@@ -259,7 +306,7 @@ const ListDetailView: React.FC = () => {
                            {/* Unit Selector - Resized Smaller */}
                            <select 
                                value={currentUnit}
-                               onChange={(e) => updateItemUnit(item.productId, e.target.value)}
+                               onChange={(e) => updateItemUnit(item, e.target.value)}
                                className="h-10 px-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg text-base text-gray-600 dark:text-slate-300 focus:border-primary-500 outline-none max-w-[120px] shadow-sm"
                            >
                                {units.map(u => (
@@ -269,7 +316,7 @@ const ListDetailView: React.FC = () => {
 
                            {/* Remove Button - Red Trash Can */}
                            <button 
-                            onClick={() => handleRemoveItem(item.productId)}
+                            onClick={() => handleRemoveItem(item)}
                             className="text-red-500 hover:text-red-700 ml-2 p-2 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                           >
                             <Trash2 size={20} />
@@ -326,7 +373,7 @@ const ListDetailView: React.FC = () => {
               
               {searchTerm.trim().length > 0 && !productSuggestions.some(p => t_prod(p.name).toLowerCase() === searchTerm.toLowerCase()) && (
                   <button 
-                     onClick={openCreateModal}
+                     onClick={() => openCreateModal()}
                      className="w-full text-left p-3 hover:bg-green-50 dark:hover:bg-green-900/20 text-green-600 dark:text-green-400 font-semibold border-t border-gray-100 dark:border-slate-700 flex items-center gap-2"
                   >
                       <Plus size={18} />

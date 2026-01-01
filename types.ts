@@ -28,7 +28,8 @@ export interface Store {
 }
 
 export interface ShoppingListItem {
-  productId: string;
+  productId?: string; // Optional now
+  customName?: string; // For items not in database yet
   quantity: number;
   unit?: string; // The unit specific to this list item (e.g. "500 g" instead of default "1 kg")
   isChecked: boolean;

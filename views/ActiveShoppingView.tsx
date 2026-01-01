@@ -21,10 +21,10 @@ const ActiveShoppingView: React.FC = () => {
       return list?.items.filter(i => i.isChecked).length || 0;
   }, [list]);
 
-  const toggleCheck = (productId: string) => {
+  const toggleCheck = (item: ShoppingListItem) => {
     if (!list) return;
     const updatedItems = list.items.map(i => 
-      i.productId === productId ? { ...i, isChecked: !i.isChecked } : i
+      i === item ? { ...i, isChecked: !i.isChecked } : i
     );
     
     const allChecked = updatedItems.every(i => i.isChecked);
@@ -49,11 +49,19 @@ const ActiveShoppingView: React.FC = () => {
     if (!list || !currentStore) return { activeGroups: [], checkedGroups: [] };
 
     const itemsByCat = new Map<string, ShoppingListItem[]>();
+    const unknownItems: ShoppingListItem[] = [];
+
     list.items.forEach(item => {
-        const product = products.find(p => p.id === item.productId);
-        if(product) {
-            const current = itemsByCat.get(product.categoryId) || [];
-            itemsByCat.set(product.categoryId, [...current, item]);
+        if(item.productId) {
+            const product = products.find(p => p.id === item.productId);
+            if(product) {
+                const current = itemsByCat.get(product.categoryId) || [];
+                itemsByCat.set(product.categoryId, [...current, item]);
+            } else {
+                unknownItems.push(item);
+            }
+        } else {
+            unknownItems.push(item);
         }
     });
 
@@ -65,6 +73,13 @@ const ActiveShoppingView: React.FC = () => {
     const activeRes: { category: any, items: ShoppingListItem[] }[] = [];
     const checkedRes: { category: any, items: ShoppingListItem[] }[] = [];
 
+    // Process unknown items first (or last, depending on preference. Here: Unknown Category)
+    const unknownCat = { id: 'unknown', name: 'Inconnu', iconName: 'HelpCircle' };
+    const activeUnknown = unknownItems.filter(i => !i.isChecked);
+    const doneUnknown = unknownItems.filter(i => i.isChecked);
+    
+    if (activeUnknown.length > 0) activeRes.push({ category: unknownCat, items: activeUnknown });
+
     sortedCats.forEach(catId => {
         const category = categories.find(c => c.id === catId);
         const allItems = itemsByCat.get(catId) || [];
@@ -75,6 +90,8 @@ const ActiveShoppingView: React.FC = () => {
         if (activeItems.length > 0) activeRes.push({ category, items: activeItems });
         if (doneItems.length > 0) checkedRes.push({ category, items: doneItems });
     });
+
+    if (doneUnknown.length > 0) checkedRes.push({ category: unknownCat, items: doneUnknown });
 
     return { activeGroups: activeRes, checkedGroups: checkedRes };
 
@@ -127,34 +144,36 @@ const ActiveShoppingView: React.FC = () => {
          
          {/* Active Items */}
          <div className="space-y-6">
-            {activeGroups.map(({ category, items }) => {
+            {activeGroups.map(({ category, items }, index) => {
+                // Calculate total (only for real products)
                 const categoryTotal = items.reduce((acc, item) => {
-                    const product = products.find(p => p.id === item.productId);
+                    const product = item.productId ? products.find(p => p.id === item.productId) : null;
                     return acc + (item.quantity * (product?.defaultPrice || 0));
                 }, 0).toFixed(2);
                 
                 return (
-                <div key={category.id}>
+                <div key={index}>
                     <h3 className="flex items-center gap-2 text-xl font-bold text-primary-700 dark:text-primary-400 mb-3 border-b-2 border-primary-100 dark:border-slate-800 pb-1">
                         <IconComponent name={category.iconName} size={28} />
-                        {t_cat(category.name)}
-                        <span className="ml-auto text-sm bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full">{categoryTotal} €</span>
+                        {category.id === 'unknown' ? category.name : t_cat(category.name)}
+                        {category.id !== 'unknown' && <span className="ml-auto text-sm bg-primary-100 dark:bg-primary-900/50 text-primary-700 dark:text-primary-300 px-3 py-1 rounded-full">{categoryTotal} €</span>}
                     </h3>
                     <div className="space-y-3">
-                        {items.map(item => {
-                            const product = products.find(p => p.id === item.productId);
-                            if(!product) return null;
-                            const displayUnit = item.unit || product.defaultUnit;
+                        {items.map((item, i) => {
+                            const product = item.productId ? products.find(p => p.id === item.productId) : null;
+                            const name = product ? t_prod(product.name) : (item.customName || 'Article');
+                            const displayUnit = item.unit || product?.defaultUnit;
+                            
                             return (
                                 <div 
-                                    key={item.productId}
-                                    onClick={() => toggleCheck(item.productId)}
+                                    key={i}
+                                    onClick={() => toggleCheck(item)}
                                     className="bg-white dark:bg-slate-900 p-4 rounded-xl shadow-md border-l-8 border-primary-500 dark:border-primary-400 flex justify-between items-center active:scale-95 transition-transform cursor-pointer"
                                 >
-                                    <span className="text-xl font-medium text-slate-800 dark:text-slate-100">{t_prod(product.name)}</span>
+                                    <span className="text-xl font-medium text-slate-800 dark:text-slate-100">{name}</span>
                                     <div className="flex items-baseline gap-1">
                                         <span className="text-2xl font-bold text-primary-600 dark:text-primary-400">{item.quantity}</span>
-                                        <span className="text-sm font-medium text-primary-400 dark:text-primary-300">{t_unit(displayUnit)}</span>
+                                        <span className="text-sm font-medium text-primary-400 dark:text-primary-300">{t_unit(displayUnit || '')}</span>
                                     </div>
                                 </div>
                             )
@@ -175,20 +194,23 @@ const ActiveShoppingView: React.FC = () => {
 
          {/* Checked Items (Moved to bottom) */}
          <div className="space-y-4 opacity-60 grayscale transition-all duration-500">
-            {checkedGroups.map(({ category, items }) => (
-                <div key={category.id + '-checked'}>
-                    <h3 className="text-sm font-semibold text-gray-500 dark:text-slate-500 mb-2 pl-2">{t_cat(category.name)}</h3>
+            {checkedGroups.map(({ category, items }, index) => (
+                <div key={index + '-checked'}>
+                    <h3 className="text-sm font-semibold text-gray-500 dark:text-slate-500 mb-2 pl-2">
+                        {category.id === 'unknown' ? category.name : t_cat(category.name)}
+                    </h3>
                      <div className="space-y-2">
-                        {items.map(item => {
-                             const product = products.find(p => p.id === item.productId);
-                             if(!product) return null;
+                        {items.map((item, i) => {
+                             const product = item.productId ? products.find(p => p.id === item.productId) : null;
+                             const name = product ? t_prod(product.name) : (item.customName || 'Article');
+
                              return (
                                  <div 
-                                     key={item.productId}
-                                     onClick={() => toggleCheck(item.productId)}
+                                     key={i}
+                                     onClick={() => toggleCheck(item)}
                                      className="bg-gray-100 dark:bg-slate-800 p-3 rounded-lg flex justify-between items-center cursor-pointer border border-transparent hover:border-gray-300 dark:hover:border-slate-600"
                                  >
-                                     <span className="text-lg line-through text-gray-500 dark:text-slate-400">{t_prod(product.name)}</span>
+                                     <span className="text-lg line-through text-gray-500 dark:text-slate-400">{name}</span>
                                      <RotateCcw size={16} className="text-gray-400 dark:text-slate-500" />
                                  </div>
                              )

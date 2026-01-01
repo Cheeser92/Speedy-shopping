@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language } from '../types';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS } from '../constants';
 import { GoogleGenAI } from "@google/genai";
 
@@ -28,7 +28,7 @@ interface AppContextType extends AppState {
   updateStore: (store: Store) => void;
   deleteStore: (id: string) => void;
   toggleFavoriteStore: (id: string) => void;
-  addShoppingList: (name: string) => void;
+  addShoppingList: (name: string, initialItems?: ShoppingListItem[]) => void;
   updateShoppingList: (list: ShoppingList) => void;
   deleteShoppingList: (id: string) => void;
   duplicateShoppingList: (id: string) => void;
@@ -38,6 +38,7 @@ interface AppContextType extends AppState {
   deleteWeeklyMenu: (id: string) => void;
   duplicateWeeklyMenu: (id: string) => void;
   generateAIWeeklyMenu: (options: { restriction: string, dietetic: boolean, time: string, includeStarter: boolean, includeMain: boolean, includeDessert: boolean }) => Promise<WeeklyMenu['days']>;
+  createListFromUrl: (recipeName: string, url: string) => Promise<void>;
   // Unit functions
   addUnit: (unit: string) => void;
   updateUnit: (oldUnit: string, newUnit: string) => void;
@@ -320,14 +321,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setStores(prev => prev.map(s => ({ ...s, isFavorite: s.id === id })));
   };
 
-  const addShoppingList = (name: string) => {
+  const addShoppingList = (name: string, initialItems: ShoppingListItem[] = []) => {
     const favStore = stores.find(s => s.isFavorite);
     setShoppingLists(prev => [{
       id: generateId(),
       name,
       createdAt: getTodayDate(),
       storeId: favStore?.id,
-      items: []
+      items: initialItems
     }, ...prev]);
   };
 
@@ -402,9 +403,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const languageText = language === 'fr' ? 'français' : 'english';
       
-      // Construction du prompt dynamique en fonction des options cochées
-      // CHANGEMENT : Si l'option n'est pas cochée, on force le champ à être VIDE.
-      
       let starterInstruction = options.includeStarter 
           ? "   - For 'starter': Search for a real recipe. Fill 'starter' (title) and 'starterUrl'."
           : "   - For 'starter': DO NOT Generate a dish. Set 'starter' to \"\" (empty string) and 'starterUrl' to \"\" (empty string).";
@@ -450,7 +448,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         ]
       `;
 
-      // Switch to Pro model for better reasoning and tool adherence
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview', 
         contents: prompt,
@@ -462,8 +459,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let text = response.text;
       if (!text) throw new Error("No response from AI");
       
-      // Extraction et nettoyage du JSON
-      const jsonMatch = text.match(/\[[\s\S]*\]/); // Match array brackets
+      const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
           text = jsonMatch[0];
       }
@@ -485,7 +481,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           throw new Error("AI did not return an array");
       }
 
-      // Reconversion du tableau en objet structuré pour l'app
       const resultObj: any = {};
       const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
       
@@ -536,6 +531,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.error("AI Generation failed", error);
       throw error;
     }
+  };
+
+  const createListFromUrl = async (recipeName: string, url: string) => {
+      try {
+          if (!process.env.API_KEY) throw new Error("API Key missing");
+          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          
+          // Prepare context
+          const productListContext = products.map(p => `- ID: ${p.id}, Name: ${p.name}`).join('\n');
+          const unitListContext = units.join(', ');
+          
+          // Updated prompt to force search of ingredients and semantic unit matching
+          const prompt = `
+            Task: Create a detailed shopping list for the recipe "${recipeName}".
+            Recipe URL: ${url}
+            
+            Inventory (ID, Name):
+            ${productListContext}
+
+            Available Units:
+            [${unitListContext}]
+
+            Instructions:
+            1. **CRITICAL STEP**: Use the Google Search tool to find the list of ingredients for the recipe "${recipeName}" from the URL provided. 
+            2. If you cannot access the content of the URL directly, you MUST use Google Search to search for the recipe name "${recipeName}" and find the ingredients that way. Do not return an empty list without trying to search for the recipe name.
+            3. Extract ALL ingredients found.
+            4. For each ingredient:
+               - perform a SEMANTIC analysis to check if it matches a product in the Inventory. 
+               - "Matches" means it is the same item, even if the phrasing is slightly different (e.g., "Tomato" matches "Tomatoes", "Beef steak" matches "Steak").
+               - If a semantic match is found, use the corresponding ID.
+               - If NO match is found, do NOT invent an ID. Return the ingredient name as "customName".
+            5. Extract quantity and unit if possible.
+               - For "unit", you MUST choose strictly from the "Available Units" list provided above.
+               - Perform semantic matching for the unit (e.g., "tbsp" -> "cuillère à soupe", "g" -> "g").
+               - If the unit in the recipe is not in the list or is abstract (e.g., "pinch", "some"), or if no unit is specified, use "Aucune".
+            
+            Output JSON format:
+            [
+                { "productId": "id_from_inventory", "quantity": 1, "unit": "kg" },
+                { "customName": "Ingredient Name From Recipe", "quantity": 2, "unit": "Aucune" } 
+            ]
+            
+            Return ONLY JSON.
+          `;
+
+          const response = await ai.models.generateContent({
+              model: 'gemini-3-pro-preview',
+              contents: prompt,
+              config: { tools: [{ googleSearch: {} }] }
+          });
+
+          let text = response.text || "[]";
+          const jsonMatch = text.match(/\[[\s\S]*\]/);
+          if(jsonMatch) text = jsonMatch[0];
+          
+          const ingredients = JSON.parse(text);
+          
+          const newItems: ShoppingListItem[] = ingredients.map((ing: any) => {
+              let itemUnit = ing.unit || 'Aucune';
+              
+              // Force l'unité du produit si une correspondance est trouvée
+              if (ing.productId) {
+                  const matchedProduct = products.find(p => p.id === ing.productId);
+                  if (matchedProduct && matchedProduct.defaultUnit && matchedProduct.defaultUnit !== 'Aucune') {
+                      itemUnit = matchedProduct.defaultUnit;
+                  }
+              }
+              
+              return {
+                  productId: ing.productId,
+                  customName: ing.customName,
+                  quantity: typeof ing.quantity === 'number' ? ing.quantity : 1,
+                  unit: itemUnit,
+                  isChecked: false
+              };
+          });
+
+          addShoppingList(recipeName, newItems);
+
+      } catch (error) {
+          console.error("Failed to create list from recipe", error);
+          throw error;
+      }
   };
 
   // ----------------------
@@ -596,6 +674,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
       addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, generateAIWeeklyMenu,
+      createListFromUrl,
       addUnit, updateUnit, deleteUnit,
       toggleDarkMode, setThemeColor, setFontSize, setLanguage,
       importData,
