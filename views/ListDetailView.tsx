@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
 import { IconComponent } from '../components/IconComponent';
@@ -33,6 +33,15 @@ const ListDetailView: React.FC = () => {
       defaultPrice: '',
       defaultUnit: 'Aucune'
   });
+
+  // Refs for Long Press logic
+  const listRef = useRef(list);
+  const timerRef = useRef<any>(null);
+  const intervalRef = useRef<any>(null);
+
+  useEffect(() => {
+    listRef.current = list;
+  }, [list]);
 
   const currentStoreId = list?.storeId || stores.find(s => s.isFavorite)?.id;
   const currentStore = stores.find(s => s.id === currentStoreId);
@@ -117,17 +126,50 @@ const ListDetailView: React.FC = () => {
     }
   };
 
-  const updateItemQuantity = (item: ShoppingListItem, delta: number) => {
-      if(!list) return;
-      const updatedItems = list.items.map(i => {
-          if(i === item) {
+  // --- Long Press Logic ---
+
+  const modifyQuantity = (targetItem: ShoppingListItem, delta: number) => {
+      const currentList = listRef.current;
+      if (!currentList) return;
+
+      const updatedItems = currentList.items.map(i => {
+          // Robust matching: ID or Custom Name match
+          const isMatch = (i.productId && targetItem.productId && i.productId === targetItem.productId) || 
+                          (!i.productId && !targetItem.productId && i.customName === targetItem.customName); 
+          
+          if (isMatch) {
               const newQty = Math.max(1, i.quantity + delta);
               return { ...i, quantity: newQty };
           }
           return i;
       });
-      updateShoppingList({ ...list, items: updatedItems });
+      updateShoppingList({ ...currentList, items: updatedItems });
   };
+
+  const startPress = (item: ShoppingListItem, delta: number) => {
+      // Clear previous logic if any
+      endPress();
+
+      // Immediate action
+      modifyQuantity(item, delta);
+
+      // Setup long press timer
+      timerRef.current = setTimeout(() => {
+          // Start stepping by 10
+          intervalRef.current = setInterval(() => {
+              modifyQuantity(item, delta * 10);
+          }, 150);
+      }, 500);
+  };
+
+  const endPress = () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      timerRef.current = null;
+      intervalRef.current = null;
+  };
+
+  // ------------------------
 
   const updateItemUnit = (item: ShoppingListItem, newUnit: string) => {
       if(!list) return;
@@ -287,17 +329,27 @@ const ListDetailView: React.FC = () => {
                         
                         <div className="flex items-center justify-end gap-2 w-full sm:w-auto">
                            {/* Quantity Controls - Resized Smaller */}
-                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10 shadow-sm">
+                           <div className="flex items-center bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 h-10 shadow-sm select-none">
                                <button 
-                                   onClick={() => updateItemQuantity(item, -1)} 
-                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg transition-colors"
+                                   onMouseDown={() => startPress(item, -1)}
+                                   onMouseUp={endPress}
+                                   onMouseLeave={endPress}
+                                   onTouchStart={(e) => { e.preventDefault(); startPress(item, -1); }}
+                                   onTouchEnd={(e) => { e.preventDefault(); endPress(); }}
+                                   onContextMenu={(e) => e.preventDefault()}
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-l-lg transition-colors active:bg-gray-300 dark:active:bg-slate-600"
                                >
                                    <Minus size={18}/>
                                </button>
                                <span className="min-w-[40px] text-center font-bold text-base text-slate-700 dark:text-slate-200">{item.quantity}</span>
                                <button 
-                                   onClick={() => updateItemQuantity(item, 1)} 
-                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg transition-colors"
+                                   onMouseDown={() => startPress(item, 1)}
+                                   onMouseUp={endPress}
+                                   onMouseLeave={endPress}
+                                   onTouchStart={(e) => { e.preventDefault(); startPress(item, 1); }}
+                                   onTouchEnd={(e) => { e.preventDefault(); endPress(); }}
+                                   onContextMenu={(e) => e.preventDefault()}
+                                   className="h-full px-3 text-gray-500 dark:text-slate-400 hover:text-primary-600 dark:hover:text-primary-400 hover:bg-gray-200 dark:hover:bg-slate-700 rounded-r-lg transition-colors active:bg-gray-300 dark:active:bg-slate-600"
                                >
                                    <Plus size={18}/>
                                </button>
