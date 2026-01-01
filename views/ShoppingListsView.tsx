@@ -1,11 +1,12 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WeeklyMenu } from '../types';
 
 type ViewMode = 'menus' | 'shopping';
+type SortOrder = 'asc' | 'desc';
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
@@ -16,9 +17,15 @@ const ShoppingListsView: React.FC = () => {
     t
   } = useAppContext();
   
-  const [viewMode, setViewMode] = useState<ViewMode>('menus'); // Default to menus
+  // Initialize viewMode from localStorage or default to 'menus'
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+      const savedMode = localStorage.getItem('speedy_view_mode');
+      return (savedMode === 'menus' || savedMode === 'shopping') ? savedMode : 'menus';
+  });
+
   const [searchTerm, setSearchTerm] = useState('');
   const [randomMenuId, setRandomMenuId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   
   // States for List Creation/Edition
   const [isListModalOpen, setIsListModalOpen] = useState(false);
@@ -61,6 +68,23 @@ const ShoppingListsView: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, type: 'list' | 'menu'} | null>(null);
   
   const navigate = useNavigate();
+
+  // Handle View Mode Change with Persistence
+  const handleViewModeChange = (mode: ViewMode) => {
+      setViewMode(mode);
+      localStorage.setItem('speedy_view_mode', mode);
+      setRandomMenuId(null);
+  };
+
+  // Helper to parse DD/MM/YYYY
+  const parseDate = (dateStr: string): number => {
+      const parts = dateStr.split('/');
+      if (parts.length === 3) {
+          // Note: months are 0-indexed in JS Date
+          return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0])).getTime();
+      }
+      return 0;
+  };
 
   // --- Handlers for Shopping Lists ---
   const openListModal = (list?: typeof shoppingLists[0]) => {
@@ -189,6 +213,10 @@ const ShoppingListsView: React.FC = () => {
     }
   };
 
+  const toggleSortOrder = () => {
+      setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
+  };
+
   // --- Generic Delete ---
   const requestDelete = (e: React.MouseEvent, id: string, name: string, type: 'list' | 'menu') => {
     e.stopPropagation();
@@ -215,14 +243,33 @@ const ShoppingListsView: React.FC = () => {
     }, 0).toFixed(2);
   };
 
-  const filteredLists = shoppingLists.filter(list => 
-    list.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Filter and Sort Lists
+  const filteredLists = useMemo(() => {
+    const filtered = shoppingLists.filter(list => 
+        list.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+    return filtered.sort((a, b) => {
+        const dateA = parseDate(a.createdAt);
+        const dateB = parseDate(b.createdAt);
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+    });
+  }, [shoppingLists, searchTerm, sortOrder]);
   
-  // Logic: If random mode is active, show only that menu. Otherwise, follow search term.
-  const filteredMenus = randomMenuId 
-    ? weeklyMenus.filter(m => m.id === randomMenuId)
-    : weeklyMenus.filter(menu => menu.name.toLowerCase().includes(searchTerm.toLowerCase()));
+  // Filter and Sort Menus
+  const filteredMenus = useMemo(() => {
+      if (randomMenuId) {
+          return weeklyMenus.filter(m => m.id === randomMenuId);
+      }
+      const filtered = weeklyMenus.filter(menu => 
+        menu.name.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      return filtered.sort((a, b) => {
+        const dateA = parseDate(a.createdAt);
+        const dateB = parseDate(b.createdAt);
+        return sortOrder === 'desc' ? dateB - dateA : dateA - dateB;
+      });
+  }, [weeklyMenus, searchTerm, randomMenuId, sortOrder]);
+
 
   // Common input class for consistent styling
   const inputClass = "flex-1 w-full text-sm p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors";
@@ -301,6 +348,16 @@ const ShoppingListsView: React.FC = () => {
                       className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
                   />
               </div>
+
+              {/* Sort Button */}
+              <button 
+                onClick={toggleSortOrder}
+                className="p-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:border-primary-400 transition-all shadow-sm"
+                title={t('sort_date')}
+              >
+                  {sortOrder === 'desc' ? <ArrowDownWideNarrow size={18} /> : <ArrowUpNarrowWide size={18} />}
+              </button>
+
               {viewMode === 'menus' && (
                   <button 
                     onClick={toggleRandomMenu}
@@ -317,13 +374,13 @@ const ShoppingListsView: React.FC = () => {
               {/* Filter Pills */}
               <div className="flex gap-2">
                   <button 
-                    onClick={() => { setViewMode('menus'); setRandomMenuId(null); }}
+                    onClick={() => handleViewModeChange('menus')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
                     {t('menus')}
                   </button>
                   <button 
-                    onClick={() => setViewMode('shopping')}
+                    onClick={() => handleViewModeChange('shopping')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'shopping' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
                     {t('shopping')}
@@ -501,9 +558,9 @@ const ShoppingListsView: React.FC = () => {
                 <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-b-xl flex justify-between gap-3 items-center">
                     <button 
                         onClick={() => setIsAiModalOpen(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+                        className="flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
                     >
-                        <Sparkles size={16} /> {t('ai_fill')}
+                        {t('ai_fill')}
                     </button>
                     <div className="flex gap-3">
                         <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>

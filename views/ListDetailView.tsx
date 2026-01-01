@@ -334,7 +334,7 @@ const ListDetailView: React.FC = () => {
       </div>
 
       {/* Bottom Actions */}
-      <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] absolute bottom-[62px] w-full z-20 transition-colors duration-300">
+      <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] absolute bottom-[70px] w-full z-20 transition-colors duration-300">
         
         {/* Start Shopping Button */}
         <button 

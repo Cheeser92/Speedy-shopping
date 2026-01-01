@@ -22,7 +22,7 @@ const MenuDetailView: React.FC = () => {
       try {
           await createListFromUrl(name, url);
           alert("Liste de courses créée avec succès !");
-          navigate('/');
+          // On reste sur la page actuelle
       } catch (error) {
           alert("Erreur lors de la création de la liste. Vérifiez votre connexion ou la clé API.");
       } finally {
@@ -98,6 +98,23 @@ const MenuDetailView: React.FC = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4 pb-24">
+         
+         {/* Legends */}
+         <div className="flex flex-wrap gap-4 px-1 mb-3 text-xs text-gray-500 dark:text-gray-400">
+            <div className="flex items-center gap-2">
+                <div className="bg-blue-50 dark:bg-blue-900/30 p-1 rounded text-blue-500 flex-shrink-0">
+                    <ExternalLink size={14} />
+                </div>
+                <span>{t('open_recipe')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="bg-green-50 dark:bg-green-900/30 p-1 rounded text-green-600 flex-shrink-0">
+                    <ListPlus size={14} />
+                </div>
+                <span>{t('generate_shopping_list')}</span>
+            </div>
+         </div>
+
          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
              {DAYS_ORDER.map((dayKey) => {
                  const dayMenu = menu.days[dayKey as keyof typeof menu.days];

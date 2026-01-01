@@ -153,7 +153,7 @@ export const DEFAULT_INITIAL_PRODUCTS = [
   { name: 'Grande assiette', categoryName: 'Vaisselle / Art de la table', unit: 'pièce(s)' },
   { name: 'Verre à pied', categoryName: 'Vaisselle / Art de la table', unit: 'pièce(s)' },
   { name: 'Désodorisant', categoryName: 'Véhicules (Auto / moto)', unit: 'article(s)' },
-  { name: 'Huile', categoryName: 'Véhicules (Auto / moto)', unit: 'bidon(s)' },
+  { name: 'Huile moteur', categoryName: 'Véhicules (Auto / moto)', unit: 'bidon(s)' },
   { name: 'Chaussettes', categoryName: 'Vêtements', unit: 'article(s)' },
   { name: 'Caleçon', categoryName: 'Vêtements', unit: 'article(s)' },
 ];
@@ -256,7 +256,7 @@ export const TRANSLATIONS = {
     edit_menu: 'Modifier le menu',
     list_name: 'Nom de la liste...',
     menu_name: 'Nom du menu',
-    menu_placeholder: 'Ex: Semaine 12, Menu Printemps...',
+    menu_placeholder: 'Sans nom',
     created_at: 'Créé le',
     start_shopping: 'Démarrer les courses',
     list_empty: 'La liste est vide.',
@@ -357,7 +357,7 @@ export const TRANSLATIONS = {
     nothing_planned: 'Rien de prévu',
     
     // AI & Links
-    ai_fill: 'Remplir avec l\'IA',
+    ai_fill: 'IA',
     ai_search: 'Rechercher',
     ai_generating: 'Recherche de recettes...',
     ai_warning: 'La recherche sera effectuée par une IA, des erreurs sont possibles.',
@@ -373,6 +373,9 @@ export const TRANSLATIONS = {
     link_edit: 'Modifier le lien',
     link_open: 'Ouvrir le lien',
     link_placeholder: 'https://...',
+    open_recipe: 'Ouvrir la recette',
+    generate_shopping_list: 'Générer la liste de courses',
+    sort_date: 'Trier par date',
     
     // Days
     monday: 'Lundi',
@@ -404,7 +407,7 @@ export const TRANSLATIONS = {
     edit_menu: 'Edit Menu',
     list_name: 'List name...',
     menu_name: 'Menu Name',
-    menu_placeholder: 'Ex: Week 12, Spring Menu...',
+    menu_placeholder: 'No name',
     created_at: 'Created on',
     start_shopping: 'Start Shopping',
     list_empty: 'The list is empty.',
@@ -505,7 +508,7 @@ export const TRANSLATIONS = {
     nothing_planned: 'Nothing planned',
     
     // AI & Links
-    ai_fill: 'Fill with AI',
+    ai_fill: 'AI',
     ai_search: 'Search',
     ai_generating: 'Searching for recipes...',
     ai_warning: 'Search is performed by AI, errors are possible.',
@@ -521,6 +524,9 @@ export const TRANSLATIONS = {
     link_edit: 'Edit Link',
     link_open: 'Open Link',
     link_placeholder: 'https://...',
+    open_recipe: 'Open recipe',
+    generate_shopping_list: 'Generate shopping list',
+    sort_date: 'Sort by date',
     
     // Days
     monday: 'Monday',
@@ -716,7 +722,7 @@ export const PRODUCT_TRANSLATIONS: Record<string, string> = {
   'Grande assiette': 'Dinner plate',
   'Verre à pied': 'Wine glass',
   'Désodorisant': 'Air freshener',
-  'Huile': 'Oil',
+  'Huile moteur': 'Motor oil',
   'Chaussettes': 'Socks',
   'Caleçon': 'Boxers',
 };
