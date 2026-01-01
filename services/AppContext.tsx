@@ -403,18 +403,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const languageText = language === 'fr' ? 'français' : 'english';
       
       // Construction du prompt dynamique en fonction des options cochées
+      // CHANGEMENT : Si l'option n'est pas cochée, on force le champ à être VIDE.
       
       let starterInstruction = options.includeStarter 
           ? "   - For 'starter': Search for a real recipe. Fill 'starter' (title) and 'starterUrl'."
-          : "   - For 'starter': Just provide a simple name text (no search). Leave 'starterUrl' empty.";
+          : "   - For 'starter': DO NOT Generate a dish. Set 'starter' to \"\" (empty string) and 'starterUrl' to \"\" (empty string).";
 
       let mainInstruction = options.includeMain
           ? "   - For 'main': Search for a real recipe. Fill 'main' (title) and 'mainUrl'."
-          : "   - For 'main': Just provide a simple name text (no search). Leave 'mainUrl' empty.";
+          : "   - For 'main': DO NOT Generate a dish. Set 'main' to \"\" (empty string) and 'mainUrl' to \"\" (empty string).";
 
       let dessertInstruction = options.includeDessert
           ? "   - For 'dessert': Search for a real recipe. Fill 'dessert' (title) and 'dessertUrl'."
-          : "   - For 'dessert': Just provide a simple name text (no search). Leave 'dessertUrl' empty.";
+          : "   - For 'dessert': DO NOT Generate a dish. Set 'dessert' to \"\" (empty string) and 'dessertUrl' to \"\" (empty string).";
 
       const prompt = `
         Role: You are a professional meal planner.
@@ -431,6 +432,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         - **NEVER** construct a URL manually. Do not guess links.
         - **ONLY** use URLs provided by the search tool's output for the fields that require search.
         - If search is disabled for a field, verify the URL field is empty.
+        - If the instruction says "DO NOT Generate", the value MUST be an empty string "".
 
         JSON FORMAT:
         Return ONLY a JSON Array.

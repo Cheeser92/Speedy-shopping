@@ -538,7 +538,7 @@ const ShoppingListsView: React.FC = () => {
                                       type="checkbox" 
                                       checked={aiConfig.includeStarter}
                                       onChange={(e) => setAiConfig({...aiConfig, includeStarter: e.target.checked})}
-                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                      className="rounded text-purple-600 focus:ring-purple-500 bg-white border-gray-300 shadow-sm"
                                   />
                                   <span className="text-slate-700 dark:text-slate-200 text-sm">{t('starter')}</span>
                               </label>
@@ -547,7 +547,7 @@ const ShoppingListsView: React.FC = () => {
                                       type="checkbox" 
                                       checked={aiConfig.includeMain}
                                       onChange={(e) => setAiConfig({...aiConfig, includeMain: e.target.checked})}
-                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                      className="rounded text-purple-600 focus:ring-purple-500 bg-white border-gray-300 shadow-sm"
                                   />
                                   <span className="text-slate-700 dark:text-slate-200 text-sm font-medium">{t('main_dish')}</span>
                               </label>
@@ -556,7 +556,7 @@ const ShoppingListsView: React.FC = () => {
                                       type="checkbox" 
                                       checked={aiConfig.includeDessert}
                                       onChange={(e) => setAiConfig({...aiConfig, includeDessert: e.target.checked})}
-                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                      className="rounded text-purple-600 focus:ring-purple-500 bg-white border-gray-300 shadow-sm"
                                   />
                                   <span className="text-slate-700 dark:text-slate-200 text-sm">{t('dessert')}</span>
                               </label>
@@ -594,7 +594,7 @@ const ShoppingListsView: React.FC = () => {
                                   type="checkbox" 
                                   checked={aiConfig.dietetic}
                                   onChange={(e) => setAiConfig({...aiConfig, dietetic: e.target.checked})}
-                                  className="rounded text-green-600 focus:ring-green-500 w-5 h-5"
+                                  className="rounded text-green-600 focus:ring-green-500 w-5 h-5 bg-white border-gray-300 shadow-sm"
                               />
                               <span className="text-green-800 dark:text-green-300 font-medium">{t('ai_dietetic')}</span>
                           </label>
