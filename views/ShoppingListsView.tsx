@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { WeeklyMenu } from '../types';
 
@@ -12,7 +12,7 @@ const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'sat
 const ShoppingListsView: React.FC = () => {
   const { 
     shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList, products,
-    weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu,
+    weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu, generateAIWeeklyMenu,
     t
   } = useAppContext();
   
@@ -42,6 +42,22 @@ const ShoppingListsView: React.FC = () => {
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
   const [activeMenuDayTab, setActiveMenuDayTab] = useState<string>('monday');
   
+  // States for AI Modal
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiConfig, setAiConfig] = useState({
+      restriction: 'none',
+      dietetic: false,
+      time: 'no',
+      includeStarter: false,
+      includeMain: true,
+      includeDessert: false
+  });
+
+  // States for Link Editing
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkEditData, setLinkEditData] = useState<{ day: string, type: 'lunch'|'dinner', field: 'starterUrl'|'mainUrl'|'dessertUrl', url: string } | null>(null);
+
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, type: 'list' | 'menu'} | null>(null);
   
   const navigate = useNavigate();
@@ -95,24 +111,24 @@ const ShoppingListsView: React.FC = () => {
   };
 
   const handleSaveMenu = () => {
-    if (menuFormData.name.trim()) {
-      if (editingMenuId) {
-        const original = weeklyMenus.find(m => m.id === editingMenuId);
-        if (original) {
-            updateWeeklyMenu({
-                ...original,
-                name: menuFormData.name,
-                days: menuFormData.days
-            });
-        }
-      } else {
-        addWeeklyMenu(menuFormData);
+    const finalName = menuFormData.name.trim() ? menuFormData.name.trim() : `Menu du ${new Date().toLocaleDateString()}`;
+
+    if (editingMenuId) {
+      const original = weeklyMenus.find(m => m.id === editingMenuId);
+      if (original) {
+          updateWeeklyMenu({
+              ...original,
+              name: finalName,
+              days: menuFormData.days
+          });
       }
-      setIsMenuModalOpen(false);
+    } else {
+      addWeeklyMenu({ ...menuFormData, name: finalName });
     }
+    setIsMenuModalOpen(false);
   };
 
-  const updateMenuDay = (day: string, type: 'lunch' | 'dinner', field: 'starter' | 'main' | 'dessert', value: string) => {
+  const updateMenuDay = (day: string, type: 'lunch' | 'dinner', field: string, value: string) => {
       setMenuFormData(prev => ({
           ...prev,
           days: {
@@ -126,6 +142,39 @@ const ShoppingListsView: React.FC = () => {
               }
           }
       }));
+  };
+
+  const openLinkEditor = (day: string, type: 'lunch'|'dinner', field: 'starterUrl'|'mainUrl'|'dessertUrl', currentUrl?: string) => {
+      setLinkEditData({ day, type, field, url: currentUrl || '' });
+      setIsLinkModalOpen(true);
+  };
+
+  const saveLink = () => {
+      if (linkEditData) {
+          updateMenuDay(linkEditData.day, linkEditData.type, linkEditData.field, linkEditData.url);
+          setIsLinkModalOpen(false);
+          setLinkEditData(null);
+      }
+  };
+
+  const handleAiGenerate = async () => {
+      setAiLoading(true);
+      try {
+          const generatedDays = await generateAIWeeklyMenu({
+              restriction: aiConfig.restriction,
+              dietetic: aiConfig.dietetic,
+              time: aiConfig.time,
+              includeStarter: aiConfig.includeStarter,
+              includeMain: aiConfig.includeMain,
+              includeDessert: aiConfig.includeDessert
+          });
+          setMenuFormData(prev => ({ ...prev, days: generatedDays }));
+          setIsAiModalOpen(false);
+      } catch (error) {
+          alert("Erreur lors de la génération (Vérifiez votre clé API).");
+      } finally {
+          setAiLoading(false);
+      }
   };
 
   const toggleRandomMenu = () => {
@@ -176,7 +225,43 @@ const ShoppingListsView: React.FC = () => {
     : weeklyMenus.filter(menu => menu.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   // Common input class for consistent styling
-  const inputClass = "w-full text-sm p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors";
+  const inputClass = "flex-1 w-full text-sm p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors";
+
+  // Render input with link button
+  const renderMealInput = (day: string, type: 'lunch'|'dinner', fieldName: 'starter'|'main'|'dessert', placeholder: string, isBold = false) => {
+      const dayData = menuFormData.days[day as keyof typeof menuFormData.days];
+      const mealData = dayData[type];
+      const value = mealData[fieldName];
+      const urlField = `${fieldName}Url` as 'starterUrl'|'mainUrl'|'dessertUrl';
+      const urlValue = mealData[urlField];
+
+      return (
+          <div className="flex gap-2 items-center">
+              <input 
+                  placeholder={placeholder} 
+                  value={value} 
+                  onChange={(e) => updateMenuDay(day, type, fieldName, e.target.value)} 
+                  className={`${inputClass} ${isBold ? 'font-medium' : ''}`} 
+              />
+              <button
+                 type="button"
+                 onClick={(e) => {
+                     e.stopPropagation();
+                     if (urlValue) {
+                         openLinkEditor(day, type, urlField, urlValue);
+                     } else {
+                         openLinkEditor(day, type, urlField, '');
+                     }
+                 }}
+                 className={`p-2 rounded-lg transition-colors ${urlValue ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-400 dark:text-gray-500 hover:text-primary-500'}`}
+              >
+                  <Link size={16} />
+              </button>
+          </div>
+      )
+  };
+
+  const showTimeWarning = aiConfig.includeStarter && aiConfig.includeMain && aiConfig.includeDessert;
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
@@ -351,7 +436,7 @@ const ShoppingListsView: React.FC = () => {
       {/* --- Menu Create/Edit Modal --- */}
       {isMenuModalOpen && (
          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-pop">
+            <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh] animate-pop relative">
                 {/* Header */}
                 <div className="p-4 border-b dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-900 rounded-t-xl">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
@@ -371,7 +456,7 @@ const ShoppingListsView: React.FC = () => {
                             placeholder={t('menu_placeholder')}
                             value={menuFormData.name}
                             onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})}
-                            className={inputClass}
+                            className="w-full p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                         />
                     </div>
 
@@ -394,9 +479,9 @@ const ShoppingListsView: React.FC = () => {
                          <div className="bg-orange-50 dark:bg-orange-900/10 p-3 rounded-lg border border-orange-100 dark:border-orange-900/30">
                              <h4 className="font-bold text-orange-600 dark:text-orange-400 mb-2 flex items-center gap-1 text-sm uppercase">{t('lunch')}</h4>
                              <div className="space-y-2">
-                                <input placeholder={t('starter')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'starter', e.target.value)} className={inputClass} />
-                                <input placeholder={t('main_dish')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'main', e.target.value)} className={`${inputClass} font-medium`} />
-                                <input placeholder={t('dessert')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].lunch.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'lunch', 'dessert', e.target.value)} className={inputClass} />
+                                {renderMealInput(activeMenuDayTab, 'lunch', 'starter', t('starter'))}
+                                {renderMealInput(activeMenuDayTab, 'lunch', 'main', t('main_dish'), true)}
+                                {renderMealInput(activeMenuDayTab, 'lunch', 'dessert', t('dessert'))}
                              </div>
                          </div>
 
@@ -404,21 +489,206 @@ const ShoppingListsView: React.FC = () => {
                          <div className="bg-indigo-50 dark:bg-indigo-900/10 p-3 rounded-lg border border-indigo-100 dark:border-indigo-900/30">
                              <h4 className="font-bold text-indigo-600 dark:text-indigo-400 mb-2 flex items-center gap-1 text-sm uppercase">{t('dinner')}</h4>
                              <div className="space-y-2">
-                                <input placeholder={t('starter')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.starter} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'starter', e.target.value)} className={inputClass} />
-                                <input placeholder={t('main_dish')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.main} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'main', e.target.value)} className={`${inputClass} font-medium`} />
-                                <input placeholder={t('dessert')} value={menuFormData.days[activeMenuDayTab as keyof typeof menuFormData.days].dinner.dessert} onChange={(e) => updateMenuDay(activeMenuDayTab, 'dinner', 'dessert', e.target.value)} className={inputClass} />
+                                {renderMealInput(activeMenuDayTab, 'dinner', 'starter', t('starter'))}
+                                {renderMealInput(activeMenuDayTab, 'dinner', 'main', t('main_dish'), true)}
+                                {renderMealInput(activeMenuDayTab, 'dinner', 'dessert', t('dessert'))}
                              </div>
                          </div>
                     </div>
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-b-xl flex justify-end gap-3">
-                    <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
-                    <button onClick={handleSaveMenu} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">{t('save')}</button>
+                <div className="p-4 border-t dark:border-slate-700 bg-gray-50 dark:bg-slate-900 rounded-b-xl flex justify-between gap-3 items-center">
+                    <button 
+                        onClick={() => setIsAiModalOpen(true)}
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:shadow-lg transition-all text-sm font-medium"
+                    >
+                        <Sparkles size={16} /> {t('ai_fill')}
+                    </button>
+                    <div className="flex gap-3">
+                        <button onClick={() => setIsMenuModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                        <button onClick={handleSaveMenu} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">{t('save')}</button>
+                    </div>
                 </div>
             </div>
          </div>
+      )}
+
+      {/* --- AI Config Modal --- */}
+      {isAiModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                          <Sparkles className="text-purple-500" size={20} />
+                          {t('ai_config_title')}
+                      </h3>
+                      <button onClick={() => setIsAiModalOpen(false)}><X className="text-gray-400 hover:text-red-500" /></button>
+                  </div>
+
+                  {/* AI Options */}
+                  <div className="space-y-4 mb-6">
+                      
+                      {/* Course Selection */}
+                      <div className="bg-purple-50 dark:bg-purple-900/10 p-3 rounded-lg border border-purple-100 dark:border-purple-900/30">
+                          <p className="text-sm font-bold text-purple-700 dark:text-purple-300 mb-2">{t('ai_courses_title')}</p>
+                          <div className="flex flex-col gap-2">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={aiConfig.includeStarter}
+                                      onChange={(e) => setAiConfig({...aiConfig, includeStarter: e.target.checked})}
+                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-slate-700 dark:text-slate-200 text-sm">{t('starter')}</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={aiConfig.includeMain}
+                                      onChange={(e) => setAiConfig({...aiConfig, includeMain: e.target.checked})}
+                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-slate-700 dark:text-slate-200 text-sm font-medium">{t('main_dish')}</span>
+                              </label>
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                  <input 
+                                      type="checkbox" 
+                                      checked={aiConfig.includeDessert}
+                                      onChange={(e) => setAiConfig({...aiConfig, includeDessert: e.target.checked})}
+                                      className="rounded text-purple-600 focus:ring-purple-500"
+                                  />
+                                  <span className="text-slate-700 dark:text-slate-200 text-sm">{t('dessert')}</span>
+                              </label>
+                          </div>
+                      </div>
+
+                      {/* Restrictions */}
+                      <div>
+                          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Restriction</p>
+                          <div className="flex flex-col gap-2">
+                              {['none', 'veg', 'nopork'].map(r => (
+                                  <label key={r} className="flex items-center gap-2 cursor-pointer">
+                                      <input 
+                                          type="radio" 
+                                          name="restriction" 
+                                          value={r} 
+                                          checked={aiConfig.restriction === r}
+                                          onChange={(e) => setAiConfig({...aiConfig, restriction: e.target.value})}
+                                          className="text-primary-600 focus:ring-primary-500"
+                                      />
+                                      <span className="text-slate-700 dark:text-slate-200">
+                                          {r === 'none' && t('ai_restriction_none')}
+                                          {r === 'veg' && t('ai_restriction_veg')}
+                                          {r === 'nopork' && t('ai_restriction_nopork')}
+                                      </span>
+                                  </label>
+                              ))}
+                          </div>
+                      </div>
+
+                      {/* Dietetic */}
+                      <div>
+                          <label className="flex items-center gap-2 cursor-pointer bg-green-50 dark:bg-green-900/20 p-2 rounded-lg border border-green-100 dark:border-green-900/30">
+                              <input 
+                                  type="checkbox" 
+                                  checked={aiConfig.dietetic}
+                                  onChange={(e) => setAiConfig({...aiConfig, dietetic: e.target.checked})}
+                                  className="rounded text-green-600 focus:ring-green-500 w-5 h-5"
+                              />
+                              <span className="text-green-800 dark:text-green-300 font-medium">{t('ai_dietetic')}</span>
+                          </label>
+                      </div>
+
+                      {/* Time */}
+                      <div>
+                          <p className="text-sm font-semibold text-gray-500 dark:text-gray-400 mb-2">Temps</p>
+                          <div className="flex flex-col gap-2">
+                               <label className="flex items-center gap-2 cursor-pointer">
+                                  <input 
+                                      type="radio" 
+                                      name="time" 
+                                      value="yes"
+                                      checked={aiConfig.time === 'yes'}
+                                      onChange={(e) => setAiConfig({...aiConfig, time: e.target.value})}
+                                  />
+                                  <span className="text-slate-700 dark:text-slate-200">{t('ai_time_yes')}</span>
+                               </label>
+                               <label className="flex items-center gap-2 cursor-pointer">
+                                  <input 
+                                      type="radio" 
+                                      name="time" 
+                                      value="no"
+                                      checked={aiConfig.time === 'no'}
+                                      onChange={(e) => setAiConfig({...aiConfig, time: e.target.value})}
+                                  />
+                                  <span className="text-slate-700 dark:text-slate-200">{t('ai_time_no')}</span>
+                               </label>
+                          </div>
+                      </div>
+                  </div>
+
+                  {/* Warnings */}
+                  <div className="space-y-2 mb-6">
+                       {/* General AI Warning */}
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-lg text-xs text-yellow-700 dark:text-yellow-400 border border-yellow-100 dark:border-yellow-900/30 flex items-start gap-2">
+                          <AlertTriangle size={14} className="flex-shrink-0 mt-0.5" />
+                          <span>{t('ai_warning')}</span>
+                      </div>
+
+                      {/* Time Warning for Full Search */}
+                      {showTimeWarning && (
+                        <div className="bg-orange-50 dark:bg-orange-900/20 p-3 rounded-lg text-xs text-orange-700 dark:text-orange-400 border border-orange-100 dark:border-orange-900/30 flex items-start gap-2 animate-fade-in">
+                            <Clock size={14} className="flex-shrink-0 mt-0.5" />
+                            <span className="font-semibold">{t('ai_warning_long')}</span>
+                        </div>
+                      )}
+                  </div>
+
+                  <button 
+                      onClick={handleAiGenerate}
+                      disabled={aiLoading}
+                      className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-lg hover:shadow-xl font-bold flex items-center justify-center gap-2 disabled:opacity-70"
+                  >
+                      {aiLoading ? <Loader2 className="animate-spin" /> : <Sparkles />}
+                      {aiLoading ? t('ai_generating') : t('ai_search')}
+                  </button>
+              </div>
+          </div>
+      )}
+
+      {/* --- Link Editor Modal --- */}
+      {isLinkModalOpen && linkEditData && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white mb-4">{t('link_edit')}</h3>
+                  
+                  <div className="flex gap-2 mb-4">
+                      <input 
+                          type="url"
+                          placeholder={t('link_placeholder')}
+                          value={linkEditData.url}
+                          onChange={(e) => setLinkEditData({...linkEditData, url: e.target.value})}
+                          className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                          autoFocus
+                      />
+                      {linkEditData.url && (
+                          <button 
+                              onClick={() => window.open(linkEditData.url, '_blank')}
+                              className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg"
+                              title={t('link_open')}
+                          >
+                              <ExternalLink size={20} />
+                          </button>
+                      )}
+                  </div>
+
+                  <div className="flex justify-end gap-3">
+                      <button onClick={() => setIsLinkModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                      <button onClick={saveLink} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">{t('validate')}</button>
+                  </div>
+              </div>
+          </div>
       )}
 
       {/* Delete Confirmation Modal */}

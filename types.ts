@@ -46,8 +46,11 @@ export interface ShoppingList {
 
 export interface Meal {
   starter: string;
+  starterUrl?: string;
   main: string;
+  mainUrl?: string;
   dessert: string;
+  dessertUrl?: string;
 }
 
 export interface DayMenu {

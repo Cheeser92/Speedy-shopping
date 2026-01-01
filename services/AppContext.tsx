@@ -2,6 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS } from '../constants';
+import { GoogleGenAI } from "@google/genai";
 
 interface AppState {
   categories: Category[];
@@ -36,6 +37,7 @@ interface AppContextType extends AppState {
   updateWeeklyMenu: (menu: WeeklyMenu) => void;
   deleteWeeklyMenu: (id: string) => void;
   duplicateWeeklyMenu: (id: string) => void;
+  generateAIWeeklyMenu: (options: { restriction: string, dietetic: boolean, time: string, includeStarter: boolean, includeMain: boolean, includeDessert: boolean }) => Promise<WeeklyMenu['days']>;
   // Unit functions
   addUnit: (unit: string) => void;
   updateUnit: (oldUnit: string, newUnit: string) => void;
@@ -383,6 +385,157 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // AI Generation
+  const generateAIWeeklyMenu = async (options: { 
+      restriction: string, 
+      dietetic: boolean, 
+      time: string,
+      includeStarter: boolean,
+      includeMain: boolean,
+      includeDessert: boolean
+  }): Promise<WeeklyMenu['days']> => {
+    try {
+      if (!process.env.API_KEY) {
+          throw new Error("Clé API manquante");
+      }
+      
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+      const languageText = language === 'fr' ? 'français' : 'english';
+      
+      // Construction du prompt dynamique en fonction des options cochées
+      
+      let starterInstruction = options.includeStarter 
+          ? "   - For 'starter': Search for a real recipe. Fill 'starter' (title) and 'starterUrl'."
+          : "   - For 'starter': Just provide a simple name text (no search). Leave 'starterUrl' empty.";
+
+      let mainInstruction = options.includeMain
+          ? "   - For 'main': Search for a real recipe. Fill 'main' (title) and 'mainUrl'."
+          : "   - For 'main': Just provide a simple name text (no search). Leave 'mainUrl' empty.";
+
+      let dessertInstruction = options.includeDessert
+          ? "   - For 'dessert': Search for a real recipe. Fill 'dessert' (title) and 'dessertUrl'."
+          : "   - For 'dessert': Just provide a simple name text (no search). Leave 'dessertUrl' empty.";
+
+      const prompt = `
+        Role: You are a professional meal planner.
+        Context: Language=${languageText}, Restriction=${options.restriction}, Dietetic=${options.dietetic}, Time=${options.time}.
+
+        TASK:
+        1. Create a 7-day menu (Lunch and Dinner).
+        2. **GROUNDING INSTRUCTIONS**:
+        ${starterInstruction}
+        ${mainInstruction}
+        ${dessertInstruction}
+        
+        **ANTI-HALLUCINATION RULES**:
+        - **NEVER** construct a URL manually. Do not guess links.
+        - **ONLY** use URLs provided by the search tool's output for the fields that require search.
+        - If search is disabled for a field, verify the URL field is empty.
+
+        JSON FORMAT:
+        Return ONLY a JSON Array.
+        [
+           {
+             "day": "monday",
+             "lunch": { 
+               "starter": "...", "starterUrl": "...", 
+               "main": "...", "mainUrl": "...", 
+               "dessert": "...", "dessertUrl": "..." 
+             },
+             "dinner": { ... }
+           },
+           ...
+        ]
+      `;
+
+      // Switch to Pro model for better reasoning and tool adherence
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview', 
+        contents: prompt,
+        config: {
+          tools: [{ googleSearch: {} }],
+        }
+      });
+
+      let text = response.text;
+      if (!text) throw new Error("No response from AI");
+      
+      // Extraction et nettoyage du JSON
+      const jsonMatch = text.match(/\[[\s\S]*\]/); // Match array brackets
+      if (jsonMatch) {
+          text = jsonMatch[0];
+      }
+
+      let parsedArray: any[];
+      try {
+        parsedArray = JSON.parse(text);
+      } catch (e) {
+        console.error("Failed to parse AI response as JSON Array", text);
+        const secondTry = text.replace(/```json/g, '').replace(/```/g, '');
+        try {
+            parsedArray = JSON.parse(secondTry);
+        } catch (e2) {
+            throw new Error("Invalid format received from AI");
+        }
+      }
+
+      if (!Array.isArray(parsedArray)) {
+          throw new Error("AI did not return an array");
+      }
+
+      // Reconversion du tableau en objet structuré pour l'app
+      const resultObj: any = {};
+      const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      
+      const dayMapping: Record<string, string> = {
+          'lundi': 'monday', 'monday': 'monday',
+          'mardi': 'tuesday', 'tuesday': 'tuesday',
+          'mercredi': 'wednesday', 'wednesday': 'wednesday',
+          'jeudi': 'thursday', 'thursday': 'thursday',
+          'vendredi': 'friday', 'friday': 'friday',
+          'samedi': 'saturday', 'saturday': 'saturday',
+          'dimanche': 'sunday', 'sunday': 'sunday'
+      };
+
+      daysOrder.forEach(day => {
+          resultObj[day] = createEmptyDayMenu();
+      });
+
+      parsedArray.forEach((item: any) => {
+          if (item && item.day) {
+              const rawDay = item.day.toLowerCase().trim();
+              const dayKey = dayMapping[rawDay];
+              
+              if (dayKey && daysOrder.includes(dayKey)) {
+                  resultObj[dayKey] = {
+                      lunch: {
+                          starter: item.lunch?.starter || '',
+                          starterUrl: item.lunch?.starterUrl || '',
+                          main: item.lunch?.main || '',
+                          mainUrl: item.lunch?.mainUrl || '',
+                          dessert: item.lunch?.dessert || '',
+                          dessertUrl: item.lunch?.dessertUrl || ''
+                      },
+                      dinner: {
+                          starter: item.dinner?.starter || '',
+                          starterUrl: item.dinner?.starterUrl || '',
+                          main: item.dinner?.main || '',
+                          mainUrl: item.dinner?.mainUrl || '',
+                          dessert: item.dinner?.dessert || '',
+                          dessertUrl: item.dinner?.dessertUrl || ''
+                      }
+                  };
+              }
+          }
+      });
+
+      return resultObj as WeeklyMenu['days'];
+    } catch (error) {
+      console.error("AI Generation failed", error);
+      throw error;
+    }
+  };
+
   // ----------------------
 
   const addUnit = (unit: string) => {
@@ -440,7 +593,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addProduct, updateProduct, deleteProduct,
       addStore, updateStore, deleteStore, toggleFavoriteStore,
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
-      addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu,
+      addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, generateAIWeeklyMenu,
       addUnit, updateUnit, deleteUnit,
       toggleDarkMode, setThemeColor, setFontSize, setLanguage,
       importData,
