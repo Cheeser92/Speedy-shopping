@@ -191,12 +191,15 @@ const ManageArticlesView: React.FC = () => {
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
-      <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm">{t('manage_articles')}</h1>
+      <div className="flex justify-between items-center mb-1">
+          <h1 className="text-3xl font-extrabold text-primary-800 dark:text-primary-100 drop-shadow-sm leading-none">{t('manage_articles')}</h1>
           <button onClick={() => startEdit()} className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600">
               <Plus size={18} className="mr-1" /> {t('new_article')}
           </button>
       </div>
+      
+      <p className="text-lg font-medium text-primary-600 dark:text-primary-400 mb-6">{products.length} {t('nav_articles').toLowerCase()}</p>
+
       <div className="relative mb-6">
           <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
           <input 
@@ -238,11 +241,11 @@ const ManageArticlesView: React.FC = () => {
                 
                 <div className="grid gap-4">
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('name')} *</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('name')}</label>
                         <input className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg outline-none focus:border-primary-500 invalid:border-red-500 shadow-inner bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" required value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} />
                     </div>
                     <div>
-                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('aisle')} *</label>
+                        <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">{t('aisle')}</label>
                         <select className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100" value={formData.categoryId} onChange={e => setFormData({...formData, categoryId: e.target.value})}>
                             {categories.map(c => <option key={c.id} value={c.id}>{t_cat(c.name)}</option>)}
                         </select>
