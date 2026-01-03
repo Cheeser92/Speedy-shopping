@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
 import { IconComponent } from '../components/IconComponent';
 import { 
-  Plus, Trash2, Edit2, Calendar, ShoppingBag, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow, Mail, Send, Settings2, Eye, Copy, AlertTriangle
+  Plus, Trash2, Edit2, Calendar, ShoppingBag, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow, Mail, Send, Settings2, Eye, Copy, AlertTriangle, ListPlus, Check
 } from 'lucide-react';
 import { WeeklyMenu, Recipe, DishType, Season, ShoppingListItem } from '../types';
 
@@ -15,7 +15,7 @@ const ShoppingListsView: React.FC = () => {
     shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList, products,
     weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu, generateAIWeeklyMenu,
     recipes, addRecipe, updateRecipe, deleteRecipe, analyzeRecipeUrl, recipeCategories, addRecipeCategory, deleteRecipeCategory,
-    t
+    createListFromUrl, t
   } = useAppContext();
   
   const navigate = useNavigate();
@@ -61,6 +61,7 @@ const ShoppingListsView: React.FC = () => {
   });
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [loadingRecipeUrl, setLoadingRecipeUrl] = useState<string | null>(null);
 
   // States for Recipe Note Modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -256,6 +257,19 @@ const ShoppingListsView: React.FC = () => {
           alert("Erreur technique lors de l'analyse de la recette. Vérifiez votre clé API ou votre connexion.");
       } finally {
           setIsAnalyzing(false);
+      }
+  };
+
+  const handleCreateListFromRecipe = async () => {
+      if (!recipeFormData.link || !recipeFormData.name) return;
+      setLoadingRecipeUrl(recipeFormData.link);
+      try {
+          await createListFromUrl(recipeFormData.name, recipeFormData.link);
+          alert("Liste de courses créée avec succès !");
+      } catch (error) {
+          alert("Erreur lors de la création de la liste.");
+      } finally {
+          setLoadingRecipeUrl(null);
       }
   };
 
@@ -637,7 +651,7 @@ const ShoppingListsView: React.FC = () => {
                         </span>
                         
                         <div className="flex items-center gap-1 pl-2 border-l border-gray-100 dark:border-slate-700 ml-1">
-                            <button onClick={(e) => handleOpenEmailModal(e, menu)} className="text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" title="Envoyer par email">
+                            <button onClick={(e) => handleOpenEmailModal(e, menu)} className="text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800" title="Envoyer par email">
                                 <Mail size={16} />
                             </button>
                             <button onClick={(e) => { e.stopPropagation(); openMenuModal(menu); }} className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
@@ -918,14 +932,22 @@ const ShoppingListsView: React.FC = () => {
                                  placeholder="https://..."
                                  className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                              />
+                             <button
+                                 onClick={handleAnalyzeUrl}
+                                 disabled={isAnalyzing || !recipeFormData.link}
+                                 className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
+                                 title="Analyser le site pour extraire la recette"
+                             >
+                                 {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                             </button>
                              {recipeFormData.link && (
                                 <button
-                                    onClick={handleAnalyzeUrl}
-                                    disabled={isAnalyzing}
-                                    className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
-                                    title="Analyser le site pour extraire la recette"
+                                    onClick={handleCreateListFromRecipe}
+                                    disabled={loadingRecipeUrl === recipeFormData.link || (recipeFormData.name ? shoppingLists.some(l => l.name === recipeFormData.name) : false)}
+                                    className={`p-2 rounded-lg transition-colors ${recipeFormData.name && shoppingLists.some(l => l.name === recipeFormData.name) ? 'bg-gray-100 dark:bg-slate-700 text-gray-400 cursor-default' : 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60'}`}
+                                    title="Créer une liste de courses"
                                 >
-                                    {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                                    {loadingRecipeUrl === recipeFormData.link ? <Loader2 size={20} className="animate-spin" /> : (recipeFormData.name && shoppingLists.some(l => l.name === recipeFormData.name) ? <Check size={20} /> : <ListPlus size={20} />)}
                                 </button>
                              )}
                              {recipeFormData.link && (
