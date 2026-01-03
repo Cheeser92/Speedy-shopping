@@ -11,7 +11,7 @@ const SettingsView: React.FC = () => {
     themeColor, setThemeColor, 
     fontSize, setFontSize,
     language, setLanguage,
-    categories, products, stores, shoppingLists, weeklyMenus, units, importData,
+    categories, products, stores, shoppingLists, weeklyMenus, recipes, recipeCategories, units, importData,
     t
   } = useAppContext();
 
@@ -28,6 +28,8 @@ const SettingsView: React.FC = () => {
       stores,
       shoppingLists,
       weeklyMenus,
+      recipes,
+      recipeCategories,
       units,
       preferences: {
         darkMode,

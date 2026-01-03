@@ -1,7 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
-import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS } from '../constants';
+import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem, Recipe, RecipeCategory } from '../types';
+import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS, DEFAULT_RECIPE_CATEGORIES } from '../constants';
 import { GoogleGenAI } from "@google/genai";
 
 interface AppState {
@@ -10,6 +10,8 @@ interface AppState {
   stores: Store[];
   shoppingLists: ShoppingList[];
   weeklyMenus: WeeklyMenu[];
+  recipes: Recipe[];
+  recipeCategories: RecipeCategory[];
   units: string[];
   darkMode: boolean;
   themeColor: ThemeColor;
@@ -39,6 +41,13 @@ interface AppContextType extends AppState {
   duplicateWeeklyMenu: (id: string) => void;
   generateAIWeeklyMenu: (options: { restriction: string, dietetic: boolean, time: string, includeStarter: boolean, includeMain: boolean, includeDessert: boolean }) => Promise<WeeklyMenu['days']>;
   createListFromUrl: (recipeName: string, url: string) => Promise<void>;
+  // Recipe functions
+  addRecipe: (recipe: Omit<Recipe, 'id'>) => void;
+  updateRecipe: (recipe: Recipe) => void;
+  deleteRecipe: (id: string) => void;
+  addRecipeCategory: (name: string) => string;
+  updateRecipeCategory: (id: string, name: string) => void;
+  deleteRecipeCategory: (id: string) => void;
   // Unit functions
   addUnit: (unit: string) => void;
   updateUnit: (oldUnit: string, newUnit: string) => void;
@@ -72,6 +81,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [stores, setStores] = useState<Store[]>([]);
   const [shoppingLists, setShoppingLists] = useState<ShoppingList[]>([]);
   const [weeklyMenus, setWeeklyMenus] = useState<WeeklyMenu[]>([]);
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
+  const [recipeCategories, setRecipeCategories] = useState<RecipeCategory[]>([]);
   const [units, setUnits] = useState<string[]>([]);
   const [darkMode, setDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
@@ -86,6 +97,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const savedStores = localStorage.getItem('stores');
     const savedLists = localStorage.getItem('shoppingLists');
     const savedMenus = localStorage.getItem('weeklyMenus');
+    const savedRecipes = localStorage.getItem('recipes');
+    const savedRecipeCategories = localStorage.getItem('recipeCategories');
     const savedUnits = localStorage.getItem('units');
     const savedDarkMode = localStorage.getItem('darkMode');
     const savedThemeColor = localStorage.getItem('themeColor');
@@ -142,6 +155,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     if (savedLists) setShoppingLists(JSON.parse(savedLists));
     if (savedMenus) setWeeklyMenus(JSON.parse(savedMenus));
+    
+    if (savedRecipes) {
+        setRecipes(JSON.parse(savedRecipes));
+    }
+
+    if (savedRecipeCategories) {
+        setRecipeCategories(JSON.parse(savedRecipeCategories));
+    } else {
+        const initialRecipeCats = DEFAULT_RECIPE_CATEGORIES.map(name => ({ id: generateId(), name }));
+        setRecipeCategories(initialRecipeCats);
+    }
 
     if (savedUnits) {
         const parsedSavedUnits: string[] = JSON.parse(savedUnits);
@@ -182,13 +206,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.setItem('stores', JSON.stringify(stores));
       localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
       localStorage.setItem('weeklyMenus', JSON.stringify(weeklyMenus));
+      localStorage.setItem('recipes', JSON.stringify(recipes));
+      localStorage.setItem('recipeCategories', JSON.stringify(recipeCategories));
       localStorage.setItem('units', JSON.stringify(units));
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       localStorage.setItem('themeColor', themeColor);
       localStorage.setItem('fontSize', fontSize);
       localStorage.setItem('language', language);
     }
-  }, [categories, products, stores, shoppingLists, weeklyMenus, units, darkMode, themeColor, fontSize, language, loaded]);
+  }, [categories, products, stores, shoppingLists, weeklyMenus, recipes, recipeCategories, units, darkMode, themeColor, fontSize, language, loaded]);
 
   // Apply Dark Mode Class
   useEffect(() => {
@@ -384,6 +410,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
       setWeeklyMenus(prev => [newMenu, ...prev]);
     }
+  };
+
+  // --- RECIPE FUNCTIONS ---
+
+  const addRecipe = (recipeData: Omit<Recipe, 'id'>) => {
+      setRecipes(prev => [...prev, { ...recipeData, id: generateId() }]);
+  };
+
+  const updateRecipe = (recipe: Recipe) => {
+      setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
+  };
+
+  const deleteRecipe = (id: string) => {
+      setRecipes(prev => prev.filter(r => r.id !== id));
+  };
+
+  const addRecipeCategory = (name: string) => {
+      const id = generateId();
+      setRecipeCategories(prev => [...prev, { id, name }]);
+      return id;
+  };
+
+  const updateRecipeCategory = (id: string, name: string) => {
+      setRecipeCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+  };
+
+  const deleteRecipeCategory = (id: string) => {
+      setRecipeCategories(prev => prev.filter(c => c.id !== id));
+      // Optionnel: remettre à "default" les recettes qui avaient cette catégorie ? 
+      // Pour l'instant on garde l'ID orphelin ou on gère à l'affichage.
   };
 
   // AI Generation
@@ -647,7 +703,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setProducts(data.products);
       setStores(data.stores);
       setShoppingLists(data.shoppingLists);
-      if(data.weeklyMenus) setWeeklyMenus(data.weeklyMenus); // Import menus
+      if(data.weeklyMenus) setWeeklyMenus(data.weeklyMenus);
+      if(data.recipes) setRecipes(data.recipes);
+      if(data.recipeCategories) {
+          setRecipeCategories(data.recipeCategories);
+      } else {
+          const initialRecipeCats = DEFAULT_RECIPE_CATEGORIES.map(name => ({ id: generateId(), name }));
+          setRecipeCategories(initialRecipeCats);
+      }
       
       if(data.units) {
           setUnits(data.units);
@@ -665,8 +728,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      categories: sortedCategories,
-      products, stores, shoppingLists, weeklyMenus,
+      categories,
+      products, stores, shoppingLists, weeklyMenus, recipes, recipeCategories,
       units: sortedUnits,
       darkMode, themeColor, fontSize, language,
       addCategory, updateCategory, deleteCategory,
@@ -675,6 +738,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
       addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, generateAIWeeklyMenu,
       createListFromUrl,
+      addRecipe, updateRecipe, deleteRecipe,
+      addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
       addUnit, updateUnit, deleteUnit,
       toggleDarkMode, setThemeColor, setFontSize, setLanguage,
       importData,

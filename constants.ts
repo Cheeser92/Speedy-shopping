@@ -1,5 +1,5 @@
 
-import { Category, Store, ThemeColor, AppFontSize } from './types';
+import { Category, Store, ThemeColor, AppFontSize, RecipeCategory } from './types';
 
 export const DEFAULT_CATEGORIES: Omit<Category, 'id'>[] = [
   { name: 'Papeterie', iconName: 'Pencil' },
@@ -162,6 +162,15 @@ export const DEFAULT_STORE_NAMES = [
   'Leclerc', 'Carrefour', 'Auchan', 'Super U', 'Intermarché', 'Monoprix', 'Lidl', 'Aldi'
 ];
 
+export const DEFAULT_RECIPE_CATEGORIES: string[] = [
+    'Viande',
+    'Poisson',
+    'Pâtes',
+    'Riz',
+    'Légumes',
+    'Soupe'
+];
+
 export const DEFAULT_UNITS = [
     'Aucune',
     'article(s)',
@@ -176,7 +185,7 @@ export const DEFAULT_UNITS = [
     'cl', 
     'colis(s)',
     'filet(s)', 
-    'fiole(s)',
+    'fiole(s)', 
     'flacon(s)',
     'fut(s)',
     'g', 
@@ -245,17 +254,24 @@ export const TRANSLATIONS = {
     // Lists
     my_lists: 'Mes Listes',
     shopping: 'Courses',
-    menus: 'Menus de la semaine',
+    menus: 'Menu',
+    recipes: 'Recettes',
     search_list: 'Rechercher une liste...',
     search_menu: 'Rechercher un menu...',
+    search_recipe: 'Rechercher une recette...',
     random: 'Aléatoire',
     random_hint: 'Vous pourriez faire pour cette semaine',
     new_list: 'Nouvelle liste',
     new_menu: 'Nouveau menu',
+    new_recipe: 'Recette',
     edit_list: 'Modifier la liste',
     edit_menu: 'Modifier le menu',
+    edit_recipe: 'Modifier la recette',
     list_name: 'Nom de la liste...',
     menu_name: 'Nom du menu',
+    recipe_name: 'Nom de la recette',
+    recipe_link: 'Lien (URL)',
+    recipe_note: 'Recette / Notes',
     menu_placeholder: 'Sans nom',
     created_at: 'Créé le',
     start_shopping: 'Démarrer les courses',
@@ -288,6 +304,11 @@ export const TRANSLATIONS = {
     create_category: 'Créer un rayon',
     icon: 'Icône',
     choose_icon: 'Choisir une icône',
+    
+    // Recipe Categories
+    manage_recipe_categories: 'Catégories',
+    recipe_category: 'Catégorie',
+    new_recipe_category: 'Nouvelle catégorie',
     
     // Stores
     manage_stores: 'Magasins',
@@ -355,6 +376,18 @@ export const TRANSLATIONS = {
     main_dish: 'Plat principal',
     dessert: 'Dessert',
     nothing_planned: 'Rien de prévu',
+    type: 'Type',
+    season: 'Saison',
+    none_type: 'Aucun',
+    none_season: 'Aucune',
+    none_category: 'Aucune',
+    
+    // Seasons
+    spring: 'Printemps',
+    summer: 'Été',
+    autumn: 'Automne',
+    winter: 'Hiver',
+    all_seasons: 'Toutes',
     
     // AI & Links
     ai_fill: 'IA',
@@ -396,17 +429,24 @@ export const TRANSLATIONS = {
     // Lists
     my_lists: 'My Lists',
     shopping: 'Shopping',
-    menus: 'Weekly Menus',
+    menus: 'Menu',
+    recipes: 'Recipes',
     search_list: 'Search a list...',
     search_menu: 'Search a menu...',
+    search_recipe: 'Search a recipe...',
     random: 'Random',
     random_hint: 'You could cook this week',
     new_list: 'New List',
     new_menu: 'New Menu',
+    new_recipe: 'New Recipe',
     edit_list: 'Edit List',
     edit_menu: 'Edit Menu',
+    edit_recipe: 'Edit Recipe',
     list_name: 'List name...',
     menu_name: 'Menu Name',
+    recipe_name: 'Recipe Name',
+    recipe_link: 'Link (URL)',
+    recipe_note: 'Recipe / Notes',
     menu_placeholder: 'No name',
     created_at: 'Created on',
     start_shopping: 'Start Shopping',
@@ -439,6 +479,11 @@ export const TRANSLATIONS = {
     create_category: 'Create Aisle',
     icon: 'Icon',
     choose_icon: 'Choose an icon',
+    
+    // Recipe Categories
+    manage_recipe_categories: 'Categories',
+    recipe_category: 'Category',
+    new_recipe_category: 'New Category',
     
     // Stores
     manage_stores: 'Stores',
@@ -506,6 +551,18 @@ export const TRANSLATIONS = {
     main_dish: 'Main Dish',
     dessert: 'Dessert',
     nothing_planned: 'Nothing planned',
+    type: 'Type',
+    season: 'Season',
+    none_type: 'None',
+    none_season: 'None',
+    none_category: 'None',
+
+    // Seasons
+    spring: 'Spring',
+    summer: 'Summer',
+    autumn: 'Autumn',
+    winter: 'Winter',
+    all_seasons: 'All',
     
     // AI & Links
     ai_fill: 'AI',

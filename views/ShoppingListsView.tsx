@@ -1,11 +1,11 @@
 
 import React, { useState, useMemo } from 'react';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
-import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow } from 'lucide-react';
+import { Plus, Trash2, Copy, Edit2, Calendar, ShoppingBag, AlertTriangle, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow, Mail, Send, Filter, Sun, Snowflake, Cloud, CloudSun, Leaf, Moon, Coffee, Settings2, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { WeeklyMenu } from '../types';
+import { WeeklyMenu, Recipe, DishType, Season } from '../types';
 
-type ViewMode = 'menus' | 'shopping';
+type ViewMode = 'menus' | 'recipes' | 'shopping';
 type SortOrder = 'asc' | 'desc';
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -14,13 +14,14 @@ const ShoppingListsView: React.FC = () => {
   const { 
     shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList, products,
     weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu, generateAIWeeklyMenu,
+    recipes, addRecipe, updateRecipe, deleteRecipe, recipeCategories, addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
     t
   } = useAppContext();
   
   // Initialize viewMode from localStorage or default to 'menus'
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
       const savedMode = localStorage.getItem('speedy_view_mode');
-      return (savedMode === 'menus' || savedMode === 'shopping') ? savedMode : 'menus';
+      return (savedMode === 'menus' || savedMode === 'recipes' || savedMode === 'shopping') ? savedMode : 'menus';
   });
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -49,6 +50,26 @@ const ShoppingListsView: React.FC = () => {
   const [editingMenuId, setEditingMenuId] = useState<string | null>(null);
   const [activeMenuDayTab, setActiveMenuDayTab] = useState<string>('monday');
   
+  // States for Recipe Creation/Edition
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [recipeFormData, setRecipeFormData] = useState<Omit<Recipe, 'id'>>({
+      name: '',
+      link: '',
+      note: '',
+      type: '',
+      categoryId: '',
+      season: ''
+  });
+  const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
+
+  // States for Recipe Note Modal
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [noteModalData, setNoteModalData] = useState<{id: string, note: string}>({id: '', note: ''});
+
+  // States for Recipe Category Management
+  const [isRecCatModalOpen, setIsRecCatModalOpen] = useState(false);
+  const [newRecCatName, setNewRecCatName] = useState('');
+
   // States for AI Modal
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -61,12 +82,21 @@ const ShoppingListsView: React.FC = () => {
       includeDessert: false
   });
 
-  // States for Link Editing
+  // States for Link Editing (Menu)
   const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
   const [linkEditData, setLinkEditData] = useState<{ day: string, type: 'lunch'|'dinner', field: 'starterUrl'|'mainUrl'|'dessertUrl', url: string } | null>(null);
 
-  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, type: 'list' | 'menu'} | null>(null);
+  // State for Email Configuration
+  const [emailMenu, setEmailMenu] = useState<WeeklyMenu | null>(null);
+  const [emailStartDay, setEmailStartDay] = useState<string>('monday');
+
+  const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, type: 'list' | 'menu' | 'recipe'} | null>(null);
   
+  // Recipe Filters
+  const [recipeFilterType, setRecipeFilterType] = useState<DishType | 'all'>('all');
+  const [recipeFilterSeason, setRecipeFilterSeason] = useState<Season | 'all'>('all');
+  const [recipeFilterCategory, setRecipeFilterCategory] = useState<string>('all');
+
   const navigate = useNavigate();
 
   // Handle View Mode Change with Persistence
@@ -168,6 +198,70 @@ const ShoppingListsView: React.FC = () => {
       }));
   };
 
+  // --- Handlers for Recipes ---
+  const openRecipeModal = (recipe?: Recipe) => {
+      if (recipe) {
+          setEditingRecipeId(recipe.id);
+          setRecipeFormData({
+              name: recipe.name,
+              link: recipe.link || '',
+              note: recipe.note || '',
+              type: recipe.type,
+              categoryId: recipe.categoryId,
+              season: recipe.season
+          });
+      } else {
+          setEditingRecipeId(null);
+          setRecipeFormData({
+              name: '',
+              link: '',
+              note: '',
+              type: '', // Default empty (Aucun)
+              categoryId: '', // Default empty (Aucune)
+              season: '' // Default empty (Aucune)
+          });
+      }
+      setIsRecipeModalOpen(true);
+  };
+
+  const handleSaveRecipe = () => {
+      if (!recipeFormData.name.trim()) return;
+      
+      const categoryId = recipeFormData.categoryId; // can be empty
+
+      if (editingRecipeId) {
+          updateRecipe({ 
+              id: editingRecipeId, 
+              ...recipeFormData,
+              name: recipeFormData.name.trim(),
+              categoryId
+          });
+      } else {
+          addRecipe({
+              ...recipeFormData,
+              name: recipeFormData.name.trim(),
+              categoryId
+          });
+      }
+      setIsRecipeModalOpen(false);
+  };
+
+  // --- Note Modal ---
+  const openNoteModal = (e: React.MouseEvent, recipe: Recipe) => {
+      e.stopPropagation();
+      setNoteModalData({ id: recipe.id, note: recipe.note || '' });
+      setIsNoteModalOpen(true);
+  };
+
+  const handleSaveNote = () => {
+      const recipe = recipes.find(r => r.id === noteModalData.id);
+      if (recipe) {
+          updateRecipe({ ...recipe, note: noteModalData.note });
+      }
+      setIsNoteModalOpen(false);
+  };
+
+  // --- Link Editing (Menu) ---
   const openLinkEditor = (day: string, type: 'lunch'|'dinner', field: 'starterUrl'|'mainUrl'|'dessertUrl', currentUrl?: string) => {
       setLinkEditData({ day, type, field, url: currentUrl || '' });
       setIsLinkModalOpen(true);
@@ -217,8 +311,70 @@ const ShoppingListsView: React.FC = () => {
       setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc');
   };
 
+  const handleOpenEmailModal = (e: React.MouseEvent, menu: WeeklyMenu) => {
+    e.stopPropagation();
+    setEmailMenu(menu);
+    setEmailStartDay('monday'); // Reset default start day
+  };
+
+  const proceedSendEmail = () => {
+    if (!emailMenu) return;
+
+    // Reorder days based on selection
+    const startIndex = DAYS_ORDER.indexOf(emailStartDay);
+    const reorderedDays = [...DAYS_ORDER.slice(startIndex), ...DAYS_ORDER.slice(0, startIndex)];
+
+    const subject = encodeURIComponent(`🍽️ Menu : ${emailMenu.name}`);
+    let bodyContent = `Voici le menu "${emailMenu.name}" :\n\n`;
+    
+    // Header line
+    bodyContent += `📅  PLANNING DE LA SEMAINE\n\n`;
+
+    reorderedDays.forEach(dayKey => {
+      const dayMenu = emailMenu.days[dayKey as keyof typeof emailMenu.days];
+      const hasLunch = dayMenu.lunch.starter || dayMenu.lunch.main || dayMenu.lunch.dessert;
+      const hasDinner = dayMenu.dinner.starter || dayMenu.dinner.main || dayMenu.dinner.dessert;
+
+      if (hasLunch || hasDinner) {
+          // Day Header
+          bodyContent += `🔶 ${t(dayKey as any).toUpperCase()}\n`;
+          
+          if (hasLunch) {
+             bodyContent += `   ☀️ MIDI\n`;
+             if (dayMenu.lunch.starter) {
+                 bodyContent += `      • ${t('starter')} : ${dayMenu.lunch.starter}\n`;
+             }
+             if (dayMenu.lunch.main) {
+                 bodyContent += `      • ${t('main_dish')} : ${dayMenu.lunch.main}\n`;
+             }
+             if (dayMenu.lunch.dessert) {
+                 bodyContent += `      • ${t('dessert')} : ${dayMenu.lunch.dessert}\n`;
+             }
+          }
+
+          if (hasDinner) {
+             bodyContent += `   🌙 SOIR\n`;
+             if (dayMenu.dinner.starter) {
+                 bodyContent += `      • ${t('starter')} : ${dayMenu.dinner.starter}\n`;
+             }
+             if (dayMenu.dinner.main) {
+                 bodyContent += `      • ${t('main_dish')} : ${dayMenu.dinner.main}\n`;
+             }
+             if (dayMenu.dinner.dessert) {
+                 bodyContent += `      • ${t('dessert')} : ${dayMenu.dinner.dessert}\n`;
+             }
+          }
+          bodyContent += `\n`;
+      }
+    });
+
+    const body = encodeURIComponent(bodyContent);
+    window.location.href = `mailto:as.smouts@gmail.com?subject=${subject}&body=${body}`;
+    setEmailMenu(null); // Close modal
+  };
+
   // --- Generic Delete ---
-  const requestDelete = (e: React.MouseEvent, id: string, name: string, type: 'list' | 'menu') => {
+  const requestDelete = (e: React.MouseEvent, id: string, name: string, type: 'list' | 'menu' | 'recipe') => {
     e.stopPropagation();
     setDeleteConfirm({ id, name, type });
   };
@@ -227,9 +383,11 @@ const ShoppingListsView: React.FC = () => {
     if (deleteConfirm) {
       if (deleteConfirm.type === 'list') {
         deleteShoppingList(deleteConfirm.id);
-      } else {
+      } else if (deleteConfirm.type === 'menu') {
         deleteWeeklyMenu(deleteConfirm.id);
         if (randomMenuId === deleteConfirm.id) setRandomMenuId(null);
+      } else if (deleteConfirm.type === 'recipe') {
+          deleteRecipe(deleteConfirm.id);
       }
       setDeleteConfirm(null);
     }
@@ -270,6 +428,17 @@ const ShoppingListsView: React.FC = () => {
       });
   }, [weeklyMenus, searchTerm, randomMenuId, sortOrder]);
 
+  // Filter and Sort Recipes
+  const filteredRecipes = useMemo(() => {
+      return recipes.filter(recipe => {
+          const matchesSearch = recipe.name.toLowerCase().includes(searchTerm.toLowerCase());
+          const matchesType = recipeFilterType === 'all' || recipe.type === recipeFilterType;
+          const matchesSeason = recipeFilterSeason === 'all' || recipe.season === recipeFilterSeason;
+          const matchesCategory = recipeFilterCategory === 'all' || recipe.categoryId === recipeFilterCategory;
+          return matchesSearch && matchesType && matchesSeason && matchesCategory;
+      }).sort((a, b) => a.name.localeCompare(b.name));
+  }, [recipes, searchTerm, recipeFilterType, recipeFilterSeason, recipeFilterCategory]);
+
 
   // Common input class for consistent styling
   const inputClass = "flex-1 w-full text-sm p-2 rounded-lg border border-gray-300 dark:border-slate-600 bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors";
@@ -308,6 +477,25 @@ const ShoppingListsView: React.FC = () => {
       )
   };
 
+  const getSeasonIcon = (season: Season) => {
+      switch(season) {
+          case 'spring': return <CloudSun size={14} className="text-green-500" />;
+          case 'summer': return <Sun size={14} className="text-orange-500" />;
+          case 'autumn': return <Leaf size={14} className="text-brown-500" />;
+          case 'winter': return <Snowflake size={14} className="text-blue-400" />;
+          default: return null;
+      }
+  };
+
+  const getTypeIcon = (type: DishType) => {
+      switch(type) {
+          case 'starter': return <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded">E</span>;
+          case 'main': return <span className="text-xs font-bold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">P</span>;
+          case 'dessert': return <span className="text-xs font-bold text-pink-600 bg-pink-100 px-1.5 py-0.5 rounded">D</span>;
+          default: return null;
+      }
+  };
+
   const showTimeWarning = aiConfig.includeStarter && aiConfig.includeMain && aiConfig.includeDessert;
 
   return (
@@ -321,15 +509,20 @@ const ShoppingListsView: React.FC = () => {
         
         {/* Add Button */}
         <button
-            onClick={() => viewMode === 'menus' ? openMenuModal() : openListModal()}
+            onClick={() => {
+                if (viewMode === 'menus') openMenuModal();
+                else if (viewMode === 'recipes') openRecipeModal();
+                else openListModal();
+            }}
             className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600 font-medium transition-colors"
         >
-            <Plus size={18} className="mr-1" /> {viewMode === 'menus' ? t('new_menu') : t('new_list')}
+            <Plus size={18} className="mr-1" /> 
+            {viewMode === 'menus' ? t('new_menu') : viewMode === 'recipes' ? t('new_recipe') : t('new_list')}
         </button>
       </div>
 
       <p className="text-lg font-medium text-primary-600 dark:text-primary-400 mb-6">
-          {viewMode === 'menus' ? t('menus') : t('shopping')}
+          {viewMode === 'menus' ? t('menus') : viewMode === 'recipes' ? t('recipes') : t('shopping')}
       </p>
 
       {/* Controls & Filters */}
@@ -339,24 +532,26 @@ const ShoppingListsView: React.FC = () => {
                   <Search className="absolute left-3 top-3 text-gray-400" size={18}/>
                   <input 
                       type="text" 
-                      placeholder={viewMode === 'menus' ? t('search_menu') : t('search_list')}
+                      placeholder={viewMode === 'menus' ? t('search_menu') : viewMode === 'recipes' ? t('search_recipe') : t('search_list')}
                       value={searchTerm}
                       onChange={e => {
                           setSearchTerm(e.target.value);
-                          if (randomMenuId) setRandomMenuId(null); // Disable random if user types
+                          if (randomMenuId) setRandomMenuId(null); 
                       }}
                       className="w-full pl-10 p-2 border border-gray-300 dark:border-slate-700 rounded-xl shadow-sm focus:ring-2 focus:ring-primary-500 outline-none bg-white dark:bg-slate-800 text-primary-900 dark:text-primary-100 placeholder-primary-300 dark:placeholder-slate-500"
                   />
               </div>
 
-              {/* Sort Button */}
-              <button 
-                onClick={toggleSortOrder}
-                className="p-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:border-primary-400 transition-all shadow-sm"
-                title={t('sort_date')}
-              >
-                  {sortOrder === 'desc' ? <ArrowDownWideNarrow size={18} /> : <ArrowUpNarrowWide size={18} />}
-              </button>
+              {/* Sort Button (only for lists/menus) */}
+              {viewMode !== 'recipes' && (
+                  <button 
+                    onClick={toggleSortOrder}
+                    className="p-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 hover:border-primary-400 transition-all shadow-sm"
+                    title={t('sort_date')}
+                  >
+                      {sortOrder === 'desc' ? <ArrowDownWideNarrow size={18} /> : <ArrowUpNarrowWide size={18} />}
+                  </button>
+              )}
 
               {viewMode === 'menus' && (
                   <button 
@@ -365,10 +560,53 @@ const ShoppingListsView: React.FC = () => {
                     title={t('random')}
                   >
                       <Shuffle size={18} />
-                      <span className="hidden sm:inline">{t('random')}</span>
                   </button>
               )}
           </div>
+          
+          {/* Recipe Specific Filters */}
+          {viewMode === 'recipes' && (
+              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+                  <select 
+                      value={recipeFilterType} 
+                      onChange={(e) => setRecipeFilterType(e.target.value as DishType | 'all')}
+                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
+                  >
+                      <option value="all">{t('all_seasons')}</option>
+                      <option value="starter">{t('starter')}</option>
+                      <option value="main">{t('main_dish')}</option>
+                      <option value="dessert">{t('dessert')}</option>
+                  </select>
+                  
+                  <select 
+                      value={recipeFilterSeason} 
+                      onChange={(e) => setRecipeFilterSeason(e.target.value as Season | 'all')}
+                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
+                  >
+                      <option value="all">{t('all_seasons')}</option>
+                      <option value="spring">{t('spring')}</option>
+                      <option value="summer">{t('summer')}</option>
+                      <option value="autumn">{t('autumn')}</option>
+                      <option value="winter">{t('winter')}</option>
+                  </select>
+
+                   <div className="flex items-center gap-1">
+                      <select 
+                          value={recipeFilterCategory} 
+                          onChange={(e) => setRecipeFilterCategory(e.target.value)}
+                          className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
+                      >
+                          <option value="all">Toutes Cat.</option>
+                          {recipeCategories.map(c => (
+                              <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                      </select>
+                      <button onClick={() => setIsRecCatModalOpen(true)} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300" title={t('manage_recipe_categories')}>
+                          <Settings2 size={18} />
+                      </button>
+                  </div>
+              </div>
+          )}
 
           <div className="flex flex-col justify-center items-center gap-3">
               {/* Filter Pills */}
@@ -378,6 +616,12 @@ const ShoppingListsView: React.FC = () => {
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
                     {t('menus')}
+                  </button>
+                  <button 
+                    onClick={() => handleViewModeChange('recipes')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'recipes' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
+                  >
+                    {t('recipes')}
                   </button>
                   <button 
                     onClick={() => handleViewModeChange('shopping')}
@@ -416,6 +660,9 @@ const ShoppingListsView: React.FC = () => {
                         </span>
                         
                         <div className="flex items-center gap-1 pl-2 border-l border-gray-100 dark:border-slate-700 ml-1">
+                            <button onClick={(e) => handleOpenEmailModal(e, menu)} className="text-gray-400 dark:text-slate-500 hover:text-green-600 dark:hover:text-green-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700" title="Envoyer par email">
+                                <Mail size={16} />
+                            </button>
                             <button onClick={(e) => { e.stopPropagation(); openMenuModal(menu); }} className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700">
                                 <Edit2 size={16} />
                             </button>
@@ -429,6 +676,55 @@ const ShoppingListsView: React.FC = () => {
                     </div>
                </div>
            </div>
+        ))}
+
+        {/* --- RECIPES VIEW --- */}
+        {viewMode === 'recipes' && filteredRecipes.map((recipe) => (
+            <div key={recipe.id} onClick={() => openRecipeModal(recipe)} className="bg-white dark:bg-slate-800 p-3 rounded-xl shadow-sm border border-primary-100 dark:border-slate-700 hover:shadow-md transition-all relative overflow-hidden group cursor-pointer">
+                
+                <div className="flex justify-between items-start mb-3">
+                    <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+                        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-100 truncate">{recipe.name}</h2>
+                    </div>
+                    {recipe.link && (
+                        <a href={recipe.link} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()} className="text-blue-500 hover:text-blue-700 bg-blue-50 dark:bg-blue-900/30 p-1.5 rounded-lg transition-colors">
+                            <ExternalLink size={16} />
+                        </a>
+                    )}
+                </div>
+                
+                <div className="flex items-end justify-between mt-2">
+                    <div className="flex flex-wrap gap-2">
+                        {recipe.categoryId && (
+                            <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                {recipeCategories.find(c => c.id === recipe.categoryId)?.name || 'Sans cat.'}
+                            </span>
+                        )}
+                        {recipe.season && recipe.season !== 'all' && (
+                            <span className="text-xs bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-300 px-2 py-0.5 rounded-full flex items-center gap-1">
+                               {getSeasonIcon(recipe.season)} {t(recipe.season as any)}
+                            </span>
+                        )}
+                        {recipe.type && (
+                            <span className="text-xs">
+                                {getTypeIcon(recipe.type)}
+                            </span>
+                        )}
+                    </div>
+
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                        <button onClick={(e) => openNoteModal(e, recipe)} className="text-gray-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                            <Eye size={16} />
+                        </button>
+                        <button onClick={(e) => { e.stopPropagation(); openRecipeModal(recipe); }} className="text-gray-400 dark:text-slate-500 hover:text-primary-600 dark:hover:text-primary-400 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                            <Edit2 size={16} />
+                        </button>
+                        <button onClick={(e) => requestDelete(e, recipe.id, recipe.name, 'recipe')} className="text-red-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors">
+                            <Trash2 size={16} />
+                        </button>
+                    </div>
+                </div>
+            </div>
         ))}
 
         {/* --- SHOPPING LISTS VIEW --- */}
@@ -569,6 +865,187 @@ const ShoppingListsView: React.FC = () => {
                 </div>
             </div>
          </div>
+      )}
+
+      {/* --- Recipe Create/Edit Modal --- */}
+      {isRecipeModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 animate-pop max-h-[90vh] overflow-y-auto">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">{editingRecipeId ? t('edit_recipe') : t('new_recipe')}</h3>
+                    <button onClick={() => setIsRecipeModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
+                 </div>
+
+                 <div className="space-y-4">
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_name')}</label>
+                         <input 
+                             type="text" 
+                             value={recipeFormData.name}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, name: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             autoFocus
+                         />
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-3">
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('type')}</label>
+                             <select 
+                                 value={recipeFormData.type}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, type: e.target.value as DishType})}
+                                 className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             >
+                                 <option value="">{t('none_type')}</option>
+                                 <option value="starter">{t('starter')}</option>
+                                 <option value="main">{t('main_dish')}</option>
+                                 <option value="dessert">{t('dessert')}</option>
+                             </select>
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('season')}</label>
+                             <select 
+                                 value={recipeFormData.season}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, season: e.target.value as Season})}
+                                 className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             >
+                                 <option value="">{t('none_season')}</option>
+                                 <option value="all">{t('all_seasons')}</option>
+                                 <option value="spring">{t('spring')}</option>
+                                 <option value="summer">{t('summer')}</option>
+                                 <option value="autumn">{t('autumn')}</option>
+                                 <option value="winter">{t('winter')}</option>
+                             </select>
+                        </div>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_category')}</label>
+                         <select 
+                             value={recipeFormData.categoryId}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, categoryId: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                         >
+                             <option value="">{t('none_category')}</option>
+                             {recipeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                         </select>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_link')}</label>
+                         <div className="flex gap-2">
+                             <input 
+                                 type="url" 
+                                 value={recipeFormData.link}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, link: e.target.value})}
+                                 placeholder="https://..."
+                                 className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             />
+                             {recipeFormData.link && (
+                                 <a 
+                                     href={recipeFormData.link} 
+                                     target="_blank" 
+                                     rel="noopener noreferrer"
+                                     className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center"
+                                     title={t('link_open')}
+                                 >
+                                     <ExternalLink size={20} />
+                                 </a>
+                             )}
+                         </div>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_note')}</label>
+                         <textarea 
+                             rows={3}
+                             value={recipeFormData.note}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, note: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                         />
+                     </div>
+                 </div>
+
+                 <div className="flex justify-end gap-3 mt-6">
+                     <button onClick={() => setIsRecipeModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                     <button onClick={handleSaveRecipe} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">{t('save')}</button>
+                 </div>
+             </div>
+          </div>
+      )}
+
+      {/* --- Recipe Note Modal --- */}
+      {isNoteModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-2xl h-[90vh] flex flex-col animate-pop">
+                  <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                          <Settings2 size={20} />
+                          {t('recipe_note')}
+                      </h3>
+                      <button onClick={() => setIsNoteModalOpen(false)}><X className="text-gray-400 hover:text-red-500" /></button>
+                  </div>
+                  
+                  <textarea 
+                      className="w-full p-3 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 flex-1 resize-none focus:outline-none focus:ring-2 focus:ring-primary-500"
+                      value={noteModalData.note}
+                      onChange={(e) => setNoteModalData({...noteModalData, note: e.target.value})}
+                      placeholder="Ajoutez vos notes ici..."
+                  />
+
+                  <div className="flex justify-end gap-3 mt-4 flex-shrink-0">
+                      <button onClick={() => setIsNoteModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                      <button onClick={handleSaveNote} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">{t('save')}</button>
+                  </div>
+              </div>
+          </div>
+      )}
+
+      {/* --- Recipe Categories Modal --- */}
+      {isRecCatModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[70] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('manage_recipe_categories')}</h3>
+                      <button onClick={() => setIsRecCatModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
+                  </div>
+                  
+                  <div className="flex gap-2 mb-4">
+                      <input 
+                          type="text"
+                          placeholder={t('new_recipe_category')}
+                          value={newRecCatName}
+                          onChange={(e) => setNewRecCatName(e.target.value)}
+                          className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                      />
+                      <button 
+                          onClick={() => {
+                              if(newRecCatName.trim()){
+                                  addRecipeCategory(newRecCatName.trim());
+                                  setNewRecCatName('');
+                              }
+                          }}
+                          className="p-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+                      >
+                          <Plus size={20} />
+                      </button>
+                  </div>
+
+                  <div className="max-h-60 overflow-y-auto space-y-2">
+                      {recipeCategories.map(cat => (
+                          <div key={cat.id} className="flex justify-between items-center p-2 bg-gray-50 dark:bg-slate-700/50 rounded-lg">
+                              <span className="text-slate-700 dark:text-slate-200">{cat.name}</span>
+                              <button 
+                                  onClick={() => deleteRecipeCategory(cat.id)}
+                                  className="text-red-400 hover:text-red-600"
+                              >
+                                  <Trash2 size={16} />
+                              </button>
+                          </div>
+                      ))}
+                  </div>
+              </div>
+          </div>
       )}
 
       {/* --- AI Config Modal --- */}
@@ -712,6 +1189,44 @@ const ShoppingListsView: React.FC = () => {
                   </button>
               </div>
           </div>
+      )}
+
+      {/* --- Email Configuration Modal --- */}
+      {emailMenu && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-[65] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+             <div className="flex justify-between items-center mb-4">
+                 <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                     <Mail size={18} /> Envoyer le menu
+                 </h3>
+                 <button onClick={() => setEmailMenu(null)}><X className="text-gray-400 hover:text-red-500" /></button>
+             </div>
+             
+             <p className="text-sm text-gray-600 dark:text-slate-300 mb-4">
+               Choisissez le jour de début de la semaine pour l'affichage dans l'email.
+             </p>
+
+             <div className="mb-6">
+                 <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Commencer par</label>
+                 <select 
+                    value={emailStartDay} 
+                    onChange={(e) => setEmailStartDay(e.target.value)}
+                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 outline-none focus:ring-2 focus:ring-primary-500"
+                 >
+                     {DAYS_ORDER.map(day => (
+                         <option key={day} value={day}>{t(day as any)}</option>
+                     ))}
+                 </select>
+             </div>
+
+             <button 
+                 onClick={proceedSendEmail}
+                 className="w-full py-2 bg-green-600 text-white rounded-lg shadow-md hover:bg-green-700 flex items-center justify-center gap-2 font-medium"
+             >
+                 <Send size={16} /> Envoyer
+             </button>
+          </div>
+        </div>
       )}
 
       {/* --- Link Editor Modal --- */}

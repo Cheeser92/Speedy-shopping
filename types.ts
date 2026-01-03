@@ -74,6 +74,26 @@ export interface WeeklyMenu {
   };
 }
 
+// --- Types pour les Recettes (Plats) ---
+
+export type DishType = 'starter' | 'main' | 'dessert' | '';
+export type Season = 'spring' | 'summer' | 'autumn' | 'winter' | 'all' | '';
+
+export interface RecipeCategory {
+  id: string;
+  name: string;
+}
+
+export interface Recipe {
+  id: string;
+  name: string;
+  link?: string;
+  note?: string;
+  type: DishType;
+  categoryId: string; // ID of RecipeCategory
+  season: Season;
+}
+
 // ---------------------------
 
 export type ThemeColor = 'blue' | 'bordeaux' | 'yellow' | 'orange' | 'mauve' | 'green';
@@ -87,7 +107,9 @@ export interface BackupData {
   products: Product[];
   stores: Store[];
   shoppingLists: ShoppingList[];
-  weeklyMenus: WeeklyMenu[]; // Ajout des menus au backup
+  weeklyMenus: WeeklyMenu[];
+  recipes: Recipe[];          // Ajout
+  recipeCategories: RecipeCategory[]; // Ajout
   units: string[];
   preferences: {
     darkMode: boolean;
