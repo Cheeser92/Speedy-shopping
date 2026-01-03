@@ -682,6 +682,11 @@ const ShoppingListsView: React.FC = () => {
                                 {getTypeIcon(recipe.type)}
                             </span>
                         )}
+                        {recipe.season && (
+                            <span className="text-xs bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 px-2 py-0.5 rounded-full border border-orange-100 dark:border-orange-900/30">
+                                {recipe.season === 'all' ? t('all_seasons') : t(recipe.season as any)}
+                            </span>
+                        )}
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
