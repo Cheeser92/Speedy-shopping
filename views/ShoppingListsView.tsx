@@ -494,7 +494,7 @@ const ShoppingListsView: React.FC = () => {
             className="bg-primary-600 dark:bg-primary-500 text-white px-4 py-2 rounded-lg flex items-center shadow-lg hover:bg-primary-700 dark:hover:bg-primary-600 font-medium transition-colors"
         >
             <Plus size={18} className="mr-1" /> 
-            {viewMode === 'menus' ? 'Menu' : viewMode === 'recipes' ? t('new_recipe') : 'Liste'}
+            {viewMode === 'menus' ? t('btn_add_menu') : viewMode === 'recipes' ? t('btn_add_recipe') : t('btn_add_list')}
         </button>
       </div>
 
@@ -596,16 +596,16 @@ const ShoppingListsView: React.FC = () => {
                     {t('menus')}
                   </button>
                   <button 
-                    onClick={() => setViewMode('recipes')}
-                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'recipes' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
-                  >
-                    {t('recipes')}
-                  </button>
-                  <button 
                     onClick={() => setViewMode('shopping')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'shopping' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
                     {t('shopping')}
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('recipes')}
+                    className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'recipes' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
+                  >
+                    {t('recipes')}
                   </button>
               </div>
               
