@@ -2,7 +2,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem, Recipe, RecipeCategory } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS, DEFAULT_RECIPE_CATEGORIES } from '../constants';
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 
 interface AppState {
   categories: Category[];
@@ -45,6 +45,7 @@ interface AppContextType extends AppState {
   addRecipe: (recipe: Omit<Recipe, 'id'>) => void;
   updateRecipe: (recipe: Recipe) => void;
   deleteRecipe: (id: string) => void;
+  analyzeRecipeUrl: (url: string) => Promise<{ name: string, note: string }>;
   addRecipeCategory: (name: string) => string;
   updateRecipeCategory: (id: string, name: string) => void;
   deleteRecipeCategory: (id: string) => void;
@@ -438,8 +439,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteRecipeCategory = (id: string) => {
       setRecipeCategories(prev => prev.filter(c => c.id !== id));
-      // Optionnel: remettre à "default" les recettes qui avaient cette catégorie ? 
-      // Pour l'instant on garde l'ID orphelin ou on gère à l'affichage.
+  };
+
+  const analyzeRecipeUrl = async (url: string): Promise<{ name: string, note: string }> => {
+      try {
+          if (!process.env.API_KEY) throw new Error("API Key missing");
+          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          
+          const outputLang = language === 'fr' ? 'Français' : 'English';
+
+          const prompt = `
+            Task: Extract recipe details from the provided URL.
+            URL: ${url}
+            Target Language: ${outputLang}
+
+            Instructions:
+            1. Use the Google Search tool to access the content of the URL and READ the page content.
+            2. Extract the Recipe Name.
+            3. Extract the Preparation Time, Cooking Time, Ingredients, and Instructions.
+            4. Format the "note" field EXACTLY as follows (Markdown format):
+               **Temps de préparation et de cuisson**
+               [Prep time, Cooking time]
+               
+               **Ingrédients**
+               - [Ingredient 1]
+               - [Ingredient 2]
+               ...
+               
+               **Recette**
+               [Step by step instructions]
+          `;
+
+          const response = await ai.models.generateContent({
+              model: 'gemini-3-pro-preview',
+              contents: prompt,
+              config: { 
+                tools: [{ googleSearch: {} }],
+                responseMimeType: 'application/json',
+                responseSchema: {
+                    type: Type.OBJECT,
+                    properties: {
+                        name: { type: Type.STRING },
+                        note: { type: Type.STRING }
+                    }
+                }
+              }
+          });
+
+          // response.text est maintenant garanti d'être du JSON valide grâce au responseSchema
+          const result = JSON.parse(response.text || "{}");
+          
+          return {
+              name: result.name || '',
+              note: result.note || ''
+          };
+
+      } catch (error) {
+          console.error("AI Recipe Analysis failed", error);
+          throw error;
+      }
   };
 
   // AI Generation
@@ -738,7 +796,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addShoppingList, updateShoppingList, deleteShoppingList, duplicateShoppingList,
       addWeeklyMenu, updateWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, generateAIWeeklyMenu,
       createListFromUrl,
-      addRecipe, updateRecipe, deleteRecipe,
+      addRecipe, updateRecipe, deleteRecipe, analyzeRecipeUrl,
       addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
       addUnit, updateUnit, deleteUnit,
       toggleDarkMode, setThemeColor, setFontSize, setLanguage,

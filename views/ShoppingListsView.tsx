@@ -14,7 +14,7 @@ const ShoppingListsView: React.FC = () => {
   const { 
     shoppingLists, addShoppingList, deleteShoppingList, duplicateShoppingList, updateShoppingList, products,
     weeklyMenus, addWeeklyMenu, deleteWeeklyMenu, duplicateWeeklyMenu, updateWeeklyMenu, generateAIWeeklyMenu,
-    recipes, addRecipe, updateRecipe, deleteRecipe, recipeCategories, addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
+    recipes, addRecipe, updateRecipe, deleteRecipe, analyzeRecipeUrl, recipeCategories, addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
     t
   } = useAppContext();
   
@@ -61,6 +61,7 @@ const ShoppingListsView: React.FC = () => {
       season: ''
   });
   const [editingRecipeId, setEditingRecipeId] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // States for Recipe Note Modal
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -244,6 +245,29 @@ const ShoppingListsView: React.FC = () => {
           });
       }
       setIsRecipeModalOpen(false);
+  };
+
+  const handleAnalyzeUrl = async () => {
+      if (!recipeFormData.link) return;
+      setIsAnalyzing(true);
+      try {
+          const result = await analyzeRecipeUrl(recipeFormData.link);
+          
+          if (!result.name && !result.note) {
+              alert("L'IA n'a pas pu extraire le contenu de ce lien. Il est possible que le site bloque l'accès ou que le contenu ne soit pas une recette standard.");
+          } else {
+              setRecipeFormData(prev => ({
+                  ...prev,
+                  name: result.name || prev.name,
+                  note: result.note || prev.note
+              }));
+          }
+      } catch (error) {
+          console.error(error);
+          alert("Erreur technique lors de l'analyse de la recette. Vérifiez votre clé API ou votre connexion.");
+      } finally {
+          setIsAnalyzing(false);
+      }
   };
 
   // --- Note Modal ---
@@ -941,6 +965,16 @@ const ShoppingListsView: React.FC = () => {
                                  placeholder="https://..."
                                  className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                              />
+                             {recipeFormData.link && (
+                                <button
+                                    onClick={handleAnalyzeUrl}
+                                    disabled={isAnalyzing}
+                                    className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
+                                    title="Analyser le site pour extraire la recette"
+                                >
+                                    {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                                </button>
+                             )}
                              {recipeFormData.link && (
                                  <a 
                                      href={recipeFormData.link} 
