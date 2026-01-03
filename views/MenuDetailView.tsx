@@ -2,18 +2,36 @@
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
-import { ArrowLeft, Utensils, Coffee, Moon, ExternalLink, ListPlus, Loader2, Check } from 'lucide-react';
-import { DayMenu } from '../types';
+import { 
+  ArrowLeft, Utensils, Coffee, Moon, ExternalLink, ListPlus, 
+  Loader2, Check, ChefHat, X, Sparkles, Save
+} from 'lucide-react';
+import { DayMenu, DishType, Season } from '../types';
 
 const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
 const MenuDetailView: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { weeklyMenus, createListFromUrl, shoppingLists, t } = useAppContext();
+  const { 
+    weeklyMenus, createListFromUrl, shoppingLists, t, 
+    addRecipe, recipeCategories, analyzeRecipeUrl 
+  } = useAppContext();
   
   const menu = weeklyMenus.find(m => m.id === id);
   const [loadingRecipeUrl, setLoadingRecipeUrl] = useState<string | null>(null);
+
+  // States for Quick Recipe Save
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [recipeFormData, setRecipeFormData] = useState({
+    name: '',
+    link: '',
+    note: '',
+    type: '' as DishType,
+    categoryId: '',
+    season: 'all' as Season
+  });
 
   if (!menu) return <div className="text-center p-10 dark:text-white">Menu introuvable</div>;
 
@@ -22,12 +40,50 @@ const MenuDetailView: React.FC = () => {
       try {
           await createListFromUrl(name, url);
           alert("Liste de courses créée avec succès !");
-          // On reste sur la page actuelle
       } catch (error) {
           alert("Erreur lors de la création de la liste. Vérifiez votre connexion ou la clé API.");
       } finally {
           setLoadingRecipeUrl(null);
       }
+  };
+
+  const openRecipeSaveModal = (name: string, url: string, type: DishType) => {
+      setRecipeFormData({
+          name,
+          link: url,
+          note: '',
+          type,
+          categoryId: '',
+          season: 'all'
+      });
+      setIsRecipeModalOpen(true);
+  };
+
+  const handleSaveRecipe = () => {
+      if (!recipeFormData.name.trim()) return;
+      addRecipe({
+          ...recipeFormData,
+          name: recipeFormData.name.trim()
+      });
+      setIsRecipeModalOpen(false);
+      alert("Recette enregistrée !");
+  };
+
+  const handleAnalyzeUrl = async () => {
+    if (!recipeFormData.link) return;
+    setIsAnalyzing(true);
+    try {
+        const result = await analyzeRecipeUrl(recipeFormData.link);
+        setRecipeFormData(prev => ({
+            ...prev,
+            name: result.name || prev.name,
+            note: result.note || prev.note
+        }));
+    } catch (error) {
+        alert("Erreur lors de l'analyse IA.");
+    } finally {
+        setIsAnalyzing(false);
+    }
   };
 
   const renderMealCell = (dayMenu: DayMenu, type: 'lunch' | 'dinner') => {
@@ -38,7 +94,7 @@ const MenuDetailView: React.FC = () => {
         return <div className="text-gray-300 dark:text-slate-600 italic text-xs">{t('nothing_planned')}</div>;
     }
 
-    const renderItem = (label: string, name: string, url?: string, badgeColorClass: string = "") => {
+    const renderItem = (label: string, name: string, url?: string, badgeColorClass: string = "", dishType: DishType = 'main') => {
         const isListCreated = shoppingLists.some(l => l.name === name);
 
         return (
@@ -60,6 +116,13 @@ const MenuDetailView: React.FC = () => {
                                 <ExternalLink size={14} />
                             </a>
                             <button 
+                                onClick={() => openRecipeSaveModal(name, url, dishType)}
+                                className="text-purple-600 hover:text-purple-800 bg-purple-50 dark:bg-purple-900/30 p-1 rounded transition-colors"
+                                title="Enregistrer dans mes recettes"
+                            >
+                                <ChefHat size={14} />
+                            </button>
+                            <button 
                                 onClick={() => handleCreateList(name, url)}
                                 disabled={loadingRecipeUrl === url || isListCreated}
                                 className={`transition-colors p-1 rounded ${isListCreated ? 'bg-gray-100 dark:bg-slate-700 text-gray-400 cursor-default' : 'text-green-600 hover:text-green-800 bg-green-50 dark:bg-green-900/30'}`}
@@ -77,9 +140,9 @@ const MenuDetailView: React.FC = () => {
 
     return (
       <div className="space-y-2">
-        {meal.starter && renderItem('E', meal.starter, meal.starterUrl, "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300")}
-        {meal.main && renderItem('P', meal.main, meal.mainUrl, "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300")}
-        {meal.dessert && renderItem('D', meal.dessert, meal.dessertUrl, "bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300")}
+        {meal.starter && renderItem('E', meal.starter, meal.starterUrl, "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300", 'starter')}
+        {meal.main && renderItem('P', meal.main, meal.mainUrl, "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300", 'main')}
+        {meal.dessert && renderItem('D', meal.dessert, meal.dessertUrl, "bg-pink-100 dark:bg-pink-900 text-pink-700 dark:text-pink-300", 'dessert')}
       </div>
     );
   };
@@ -106,6 +169,12 @@ const MenuDetailView: React.FC = () => {
                     <ExternalLink size={14} />
                 </div>
                 <span>{t('open_recipe')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+                <div className="bg-purple-50 dark:bg-purple-900/30 p-1 rounded text-purple-600 flex-shrink-0">
+                    <ChefHat size={14} />
+                </div>
+                <span>Sauvegarder la recette</span>
             </div>
             <div className="flex items-center gap-2">
                 <div className="bg-green-50 dark:bg-green-900/30 p-1 rounded text-green-600 flex-shrink-0">
@@ -150,6 +219,114 @@ const MenuDetailView: React.FC = () => {
              })}
          </div>
       </div>
+
+      {/* Quick Recipe Save Modal */}
+      {isRecipeModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+             <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 animate-pop max-h-[90vh] overflow-y-auto">
+                 <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                        <ChefHat className="text-purple-500" /> 
+                        {t('new_recipe')}
+                    </h3>
+                    <button onClick={() => setIsRecipeModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
+                 </div>
+
+                 <div className="space-y-4">
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_name')}</label>
+                         <input 
+                             type="text" 
+                             value={recipeFormData.name}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, name: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                         />
+                     </div>
+
+                     <div className="grid grid-cols-2 gap-3">
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('type')}</label>
+                             <select 
+                                 value={recipeFormData.type}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, type: e.target.value as DishType})}
+                                 className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             >
+                                 <option value="">{t('none_type')}</option>
+                                 <option value="starter">{t('starter')}</option>
+                                 <option value="main">{t('main_dish')}</option>
+                                 <option value="dessert">{t('dessert')}</option>
+                             </select>
+                        </div>
+                        <div>
+                             <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('season')}</label>
+                             <select 
+                                 value={recipeFormData.season}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, season: e.target.value as Season})}
+                                 className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             >
+                                 <option value="all">{t('all_seasons')}</option>
+                                 <option value="spring">{t('spring')}</option>
+                                 <option value="summer">{t('summer')}</option>
+                                 <option value="autumn">{t('autumn')}</option>
+                                 <option value="winter">{t('winter')}</option>
+                             </select>
+                        </div>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_category')}</label>
+                         <select 
+                             value={recipeFormData.categoryId}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, categoryId: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                         >
+                             <option value="">{t('none_category')}</option>
+                             {recipeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                         </select>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_link')}</label>
+                         <div className="flex gap-2">
+                             <input 
+                                 type="url" 
+                                 value={recipeFormData.link}
+                                 onChange={(e) => setRecipeFormData({...recipeFormData, link: e.target.value})}
+                                 placeholder="https://..."
+                                 className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             />
+                             <button
+                                 onClick={handleAnalyzeUrl}
+                                 disabled={isAnalyzing || !recipeFormData.link}
+                                 className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
+                                 title="Extraire les détails avec l'IA"
+                             >
+                                 {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                             </button>
+                         </div>
+                     </div>
+
+                     <div>
+                         <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_note')}</label>
+                         <textarea 
+                             rows={3}
+                             value={recipeFormData.note}
+                             onChange={(e) => setRecipeFormData({...recipeFormData, note: e.target.value})}
+                             className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                             placeholder="Notes ou ingrédients..."
+                         />
+                     </div>
+                 </div>
+
+                 <div className="flex justify-end gap-3 mt-6">
+                     <button onClick={() => setIsRecipeModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
+                     <button onClick={handleSaveRecipe} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 flex items-center gap-2 shadow-md">
+                         <Save size={18}/> {t('save')}
+                     </button>
+                 </div>
+             </div>
+          </div>
+      )}
     </div>
   );
 };

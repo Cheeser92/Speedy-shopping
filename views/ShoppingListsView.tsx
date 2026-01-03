@@ -499,7 +499,7 @@ const ShoppingListsView: React.FC = () => {
       </div>
 
       <p className="text-lg font-medium text-primary-600 dark:text-primary-400 mb-6">
-          {viewMode === 'menus' ? t('menus') : viewMode === 'recipes' ? t('recipes') : t('shopping')}
+          {viewMode === 'menus' ? `${t('menus')} (${weeklyMenus.length})` : viewMode === 'recipes' ? `${t('recipes')} (${recipes.length})` : `${t('shopping')} (${shoppingLists.length})`}
       </p>
 
       {/* Controls & Filters Container */}
@@ -593,19 +593,19 @@ const ShoppingListsView: React.FC = () => {
                     onClick={() => setViewMode('menus')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('menus')}
+                    {t('menus')} ({weeklyMenus.length})
                   </button>
                   <button 
                     onClick={() => setViewMode('shopping')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'shopping' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('shopping')}
+                    {t('shopping')} ({shoppingLists.length})
                   </button>
                   <button 
                     onClick={() => setViewMode('recipes')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'recipes' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('recipes')}
+                    {t('recipes')} ({recipes.length})
                   </button>
               </div>
               
