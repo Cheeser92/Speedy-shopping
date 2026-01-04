@@ -1,416 +1,361 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../services/AppContext';
-import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, Calendar, Search, Edit3, ListPlus, BookHeart, X } from 'lucide-react';
-import { DayMenu, DishType, Recipe, Season } from '../types';
+import { WeeklyMenu, DayMenu, Meal } from '../types';
+import { 
+  ArrowLeft, Calendar, Sparkles, ShoppingCart, Trash2, Edit2, 
+  ExternalLink, Loader2, ListPlus, X, ChevronDown, ChevronUp, ChefHat
+} from 'lucide-react';
 
 const MenuDetailView: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
+    const { id } = useParams<{id: string}>();
     const navigate = useNavigate();
-    const { weeklyMenus, updateWeeklyMenu, analyzeRecipeUrl, t, createListFromUrl, addRecipe, recipeCategories } = useAppContext();
-    
+    const { 
+        weeklyMenus, updateWeeklyMenu, generateAIWeeklyMenu, 
+        createListFromUrl, analyzeRecipeUrl, addShoppingList, t
+    } = useAppContext();
+
     const menu = weeklyMenus.find(m => m.id === id);
-    
-    // State for editing a meal
+
+    // AI Modal State
+    const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+    const [aiConfig, setAiConfig] = useState({
+        restriction: 'none',
+        dietetic: false,
+        time: 'yes',
+        includeStarter: false,
+        includeMain: true,
+        includeDessert: false
+    });
+    const [isGenerating, setIsGenerating] = useState(false);
+
+    // Edit Meal Modal State
     const [editingDay, setEditingDay] = useState<string | null>(null);
     const [editingType, setEditingType] = useState<'lunch' | 'dinner' | null>(null);
     
-    // State for creating list loader
-    const [generatingListFor, setGeneratingListFor] = useState<string | null>(null);
-    
-    const [formData, setFormData] = useState<DayMenu['lunch']>({
+    // We use a local state for editing the meal data
+    const [editMealData, setEditMealData] = useState<Meal>({
         starter: '', starterUrl: '',
         main: '', mainUrl: '',
         dessert: '', dessertUrl: ''
     });
 
-    // Recipe Modal State
-    const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
-    const [recipeFormData, setRecipeFormData] = useState<Omit<Recipe, 'id'>>({
-        name: '', link: '', note: '', type: '', categoryId: '', season: ''
-    });
-    const [isAnalyzingRecipe, setIsAnalyzingRecipe] = useState(false);
-
-    // Helper for recipe analysis within the form
+    // Helper for analysing URL in the edit modal
     const [analyzingField, setAnalyzingField] = useState<string | null>(null);
 
-    useEffect(() => {
-        if (!menu) {
-            navigate('/');
-        }
-    }, [menu, navigate]);
+    // Handlers
 
-    if (!menu) return null;
+    const handleSaveMeal = () => {
+        if (!menu || !editingDay || !editingType) return;
+        
+        const updatedDays = { ...menu.days };
+        (updatedDays as any)[editingDay][editingType] = { ...editMealData };
 
-    const handleEdit = (day: string, type: 'lunch' | 'dinner') => {
-        setEditingDay(day);
-        setEditingType(type);
-        setFormData({ ...((menu.days as any)[day][type]) });
+        updateWeeklyMenu({
+            ...menu,
+            days: updatedDays
+        });
+        
+        // Close modal
+        setEditingDay(null);
+        setEditingType(null);
     };
 
-    const handleSave = () => {
-        if (editingDay && editingType) {
-            const updatedMenu = { ...menu };
-            (updatedMenu.days as any)[editingDay][editingType] = { ...formData };
-            updateWeeklyMenu(updatedMenu);
-            setEditingDay(null);
-            setEditingType(null);
-        }
+    const handleOpenEdit = (day: string, type: 'lunch' | 'dinner') => {
+        if (!menu) return;
+        const dayData = (menu.days as any)[day] as DayMenu;
+        setEditingDay(day);
+        setEditingType(type);
+        setEditMealData({ ...dayData[type] });
     };
 
     const handleAnalyzeUrl = async (fieldPrefix: 'starter' | 'main' | 'dessert') => {
-        const urlField = `${fieldPrefix}Url` as keyof typeof formData;
-        const nameField = fieldPrefix as keyof typeof formData;
-        
-        const url = formData[urlField];
+        const url = (editMealData as any)[`${fieldPrefix}Url`];
         if (!url) return;
-        
         setAnalyzingField(fieldPrefix);
         try {
             const { name } = await analyzeRecipeUrl(url);
-            setFormData(prev => ({ ...prev, [nameField]: name }));
-        } catch (e) {
+            setEditMealData(prev => ({
+                ...prev,
+                [fieldPrefix]: name || prev[fieldPrefix] // Only update name if found
+            }));
+        } catch(e) {
             console.error(e);
+            alert(t('ai_warning'));
         } finally {
             setAnalyzingField(null);
         }
     };
 
-    const handleCreateList = async (name: string, url: string) => {
-        if (!url) return;
-        setGeneratingListFor(name + url); 
+    const handleGenerateAI = async () => {
+        if (!menu) return;
+        setIsGenerating(true);
         try {
-            await createListFromUrl(name, url);
-            // Optional: Feedback notification
+            const newDays = await generateAIWeeklyMenu(aiConfig);
+            updateWeeklyMenu({
+                ...menu,
+                days: newDays
+            });
+            setIsAIModalOpen(false);
         } catch (e) {
             console.error(e);
-            alert("Erreur lors de la création de la liste.");
+            alert("Erreur lors de la génération du menu");
         } finally {
-            setGeneratingListFor(null);
+            setIsGenerating(false);
         }
     };
 
-    const handleOpenRecipeModal = (name: string, url: string, type: DishType) => {
-        setRecipeFormData({
-            name,
-            link: url || '',
-            note: '',
-            type: type || '',
-            season: 'all',
-            categoryId: ''
-        });
-        setIsRecipeModalOpen(true);
-    };
-
-    const handleSaveRecipe = () => {
-        if (!recipeFormData.name.trim()) return;
-        addRecipe(recipeFormData);
-        setIsRecipeModalOpen(false);
-    };
-
-    const handleAnalyzeRecipeInModal = async () => {
-         if (!recipeFormData.link) return;
-         setIsAnalyzingRecipe(true);
-         try {
-             const result = await analyzeRecipeUrl(recipeFormData.link);
-             setRecipeFormData(prev => ({ ...prev, name: result.name || prev.name, note: result.note || prev.note }));
-         } catch (e) {
-             console.error(e);
-         } finally {
-             setIsAnalyzingRecipe(false);
-         }
-    };
-
-    // Helper to render a single line item
-    const renderMealItem = (labelKey: string, name: string, url: string | undefined, type: DishType) => {
-        if (!name) return null;
+    const handleGenerateShoppingList = async () => {
+        if (!menu) return;
         
-        return (
-            <div className="flex justify-between items-start group py-1">
-                <div className="flex-1 pr-2">
-                    <div className="text-slate-600 dark:text-slate-400 text-sm break-words">
-                        <span className="font-medium text-slate-800 dark:text-slate-200">{t(labelKey as any)}:</span> {name}
-                    </div>
-                </div>
-                
-                <div className="flex items-center gap-1 flex-shrink-0">
-                    {url && (
-                        <a 
-                            href={url} 
-                            target="_blank" 
-                            rel="noopener noreferrer" 
-                            className="text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30 p-1.5 rounded-lg transition-colors" 
-                            title={t('link_open')}
-                        >
-                            <ExternalLink size={16} />
-                        </a>
-                    )}
-                    {url && (
-                        <button 
-                            onClick={() => handleCreateList(name, url)}
-                            disabled={generatingListFor === name + url}
-                            className="text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 p-1.5 rounded-lg disabled:opacity-50 transition-colors"
-                            title={t('generate_shopping_list')}
-                        >
-                            {generatingListFor === name + url ? <Loader2 size={16} className="animate-spin"/> : <ListPlus size={16} />}
-                        </button>
-                    )}
-                    <button 
-                        onClick={() => handleOpenRecipeModal(name, url || '', type)}
-                        className="text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/30 p-1.5 rounded-lg transition-colors"
-                        title="Sauvegarder dans mes recettes"
-                    >
-                        <BookHeart size={16} />
-                    </button>
-                </div>
-            </div>
-        );
+        // Simple generation: Collect all dish names
+        const items = [];
+        const days = Object.values(menu.days);
+        for (const day of days) {
+            for (const type of ['lunch', 'dinner'] as const) {
+                const meal = day[type];
+                if (meal.starter) items.push({ customName: meal.starter, quantity: 1, unit: 'Aucune', isChecked: false });
+                if (meal.main) items.push({ customName: meal.main, quantity: 1, unit: 'Aucune', isChecked: false });
+                if (meal.dessert) items.push({ customName: meal.dessert, quantity: 1, unit: 'Aucune', isChecked: false });
+            }
+        }
+
+        if (items.length > 0) {
+            addShoppingList(`Courses: ${menu.name}`, items);
+            alert("Liste de courses générée !");
+            navigate('/');
+        } else {
+            alert("Le menu est vide.");
+        }
     };
 
-    // Days mapping for translation/display
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    if (!menu) return <div className="p-4">Menu introuvable</div>;
+
+    const daysOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
 
     return (
-        <div className="flex flex-col h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
-            <div className="bg-white dark:bg-slate-900 p-4 shadow-sm z-10 flex items-center gap-3">
-                <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-600 dark:text-slate-300"><ArrowLeft /></button>
-                <h1 className="font-bold text-lg truncate flex-1 text-slate-800 dark:text-white">{menu.name}</h1>
+        <div className="flex flex-col h-full min-h-screen bg-primary-50 dark:bg-slate-950">
+            {/* Header */}
+            <div className="bg-white dark:bg-slate-900 p-4 shadow-sm z-10 flex flex-col gap-3">
+                <div className="flex items-center gap-2">
+                    <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-600 dark:text-slate-300"><ArrowLeft /></button>
+                    <h1 className="font-bold text-lg text-slate-800 dark:text-white flex-1">{menu.name}</h1>
+                </div>
+                <div className="flex gap-2">
+                     <button 
+                        onClick={() => setIsAIModalOpen(true)}
+                        className="flex-1 py-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 rounded-lg flex items-center justify-center gap-2 font-medium text-sm"
+                     >
+                         <Sparkles size={16} /> {t('ai_fill')}
+                     </button>
+                     <button 
+                        onClick={handleGenerateShoppingList}
+                        className="flex-1 py-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-300 rounded-lg flex items-center justify-center gap-2 font-medium text-sm"
+                     >
+                         <ShoppingCart size={16} /> {t('generate_shopping_list')}
+                     </button>
+                </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-                {days.map(day => {
-                    const dayData = (menu.days as any)[day];
-                    const hasLunch = dayData.lunch.starter || dayData.lunch.main || dayData.lunch.dessert;
-                    const hasDinner = dayData.dinner.starter || dayData.dinner.main || dayData.dinner.dessert;
-
-                    return (
-                        <div key={day} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
-                            <div className="bg-primary-100 dark:bg-primary-900/30 p-2 px-4 font-bold text-primary-800 dark:text-primary-200 capitalize flex items-center gap-2">
-                                <Calendar size={16} />
-                                {t(day as any)}
-                            </div>
-                            
-                            <div className="divide-y divide-gray-100 dark:divide-slate-800">
-                                {/* Lunch */}
-                                <div className="p-3">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider">{t('lunch')}</span>
-                                        <button onClick={() => handleEdit(day, 'lunch')} className="text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 p-1 rounded"><Edit3 size={16} /></button>
-                                    </div>
-                                    <div className="space-y-1">
-                                        {renderMealItem('starter', dayData.lunch.starter, dayData.lunch.starterUrl, 'starter')}
-                                        {renderMealItem('main_dish', dayData.lunch.main, dayData.lunch.mainUrl, 'main')}
-                                        {renderMealItem('dessert', dayData.lunch.dessert, dayData.lunch.dessertUrl, 'dessert')}
-                                        {!hasLunch && <div className="text-sm italic text-gray-400 px-1">{t('nothing_planned')}</div>}
-                                    </div>
-                                </div>
-
-                                {/* Dinner */}
-                                <div className="p-3 bg-gray-50/50 dark:bg-slate-800/20">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider">{t('dinner')}</span>
-                                        <button onClick={() => handleEdit(day, 'dinner')} className="text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 p-1 rounded"><Edit3 size={16} /></button>
-                                    </div>
-                                    <div className="space-y-1">
-                                        {renderMealItem('starter', dayData.dinner.starter, dayData.dinner.starterUrl, 'starter')}
-                                        {renderMealItem('main_dish', dayData.dinner.main, dayData.dinner.mainUrl, 'main')}
-                                        {renderMealItem('dessert', dayData.dinner.dessert, dayData.dinner.dessertUrl, 'dessert')}
-                                        {!hasDinner && <div className="text-sm italic text-gray-400 px-1">{t('nothing_planned')}</div>}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
+            {/* Days Grid */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
+                 {daysOrder.map(day => {
+                     const dayMenu = (menu.days as any)[day] as DayMenu;
+                     return (
+                         <div key={day} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-gray-100 dark:border-slate-800 overflow-hidden">
+                             <div className="bg-primary-50 dark:bg-slate-800 px-4 py-2 font-bold text-primary-700 dark:text-primary-300 border-b border-primary-100 dark:border-slate-700 uppercase tracking-wide text-sm">
+                                 {t(day as any)}
+                             </div>
+                             <div className="divide-y divide-gray-50 dark:divide-slate-800">
+                                 {/* Lunch */}
+                                 <div 
+                                    onClick={() => handleOpenEdit(day, 'lunch')}
+                                    className="p-3 hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                                 >
+                                     <div className="flex items-center gap-2 mb-1">
+                                         <span className="text-xs font-semibold text-orange-500 uppercase">{t('lunch')}</span>
+                                     </div>
+                                     <div className="space-y-1">
+                                         {dayMenu.lunch.starter && <p className="text-sm text-gray-600 dark:text-slate-400"><span className="opacity-50 text-xs">Entrée:</span> {dayMenu.lunch.starter}</p>}
+                                         <p className={`text-sm font-medium ${dayMenu.lunch.main ? 'text-slate-800 dark:text-white' : 'text-gray-400 italic'}`}>
+                                            {dayMenu.lunch.main || t('nothing_planned')}
+                                         </p>
+                                         {dayMenu.lunch.dessert && <p className="text-sm text-gray-600 dark:text-slate-400"><span className="opacity-50 text-xs">Dessert:</span> {dayMenu.lunch.dessert}</p>}
+                                     </div>
+                                 </div>
+                                 {/* Dinner */}
+                                 <div 
+                                    onClick={() => handleOpenEdit(day, 'dinner')}
+                                    className="p-3 hover:bg-gray-50 dark:hover:bg-slate-800/50 cursor-pointer transition-colors"
+                                 >
+                                     <div className="flex items-center gap-2 mb-1">
+                                         <span className="text-xs font-semibold text-indigo-500 uppercase">{t('dinner')}</span>
+                                     </div>
+                                     <div className="space-y-1">
+                                         {dayMenu.dinner.starter && <p className="text-sm text-gray-600 dark:text-slate-400"><span className="opacity-50 text-xs">Entrée:</span> {dayMenu.dinner.starter}</p>}
+                                         <p className={`text-sm font-medium ${dayMenu.dinner.main ? 'text-slate-800 dark:text-white' : 'text-gray-400 italic'}`}>
+                                            {dayMenu.dinner.main || t('nothing_planned')}
+                                         </p>
+                                         {dayMenu.dinner.dessert && <p className="text-sm text-gray-600 dark:text-slate-400"><span className="opacity-50 text-xs">Dessert:</span> {dayMenu.dinner.dessert}</p>}
+                                     </div>
+                                 </div>
+                             </div>
+                         </div>
+                     );
+                 })}
             </div>
 
-            {/* Edit Modal */}
-            {editingDay && (
+            {/* Edit Meal Modal */}
+            {editingDay && editingType && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto animate-pop">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg text-slate-800 dark:text-white capitalize">
-                                {t(editingDay as any)} - {t(editingType as any)}
-                            </h3>
-                            <button onClick={() => { setEditingDay(null); setEditingType(null); }} className="text-gray-400 hover:text-gray-600 dark:hover:text-slate-300">Fermer</button>
+                            <div>
+                                <h3 className="text-lg font-bold dark:text-white capitalize">{t(editingDay as any)} - {t(editingType)}</h3>
+                                <p className="text-xs text-gray-500">Modifiez le repas</p>
+                            </div>
+                            <button onClick={() => { setEditingDay(null); setEditingType(null); }}><X className="text-gray-400 hover:text-red-500"/></button>
                         </div>
 
-                        <div className="space-y-4">
-                            {['starter', 'main', 'dessert'].map((course) => {
-                                const courseKey = course as 'starter' | 'main' | 'dessert';
-                                const urlKey = `${course}Url` as 'starterUrl' | 'mainUrl' | 'dessertUrl';
-                                const labelKey = course === 'main' ? 'main_dish' : course;
-
-                                return (
-                                    <div key={course} className="space-y-2">
-                                        <label className="block text-sm font-medium text-gray-700 dark:text-slate-300">{t(labelKey as any)}</label>
+                        {['starter', 'main', 'dessert'].map((course) => {
+                             const fieldName = course as 'starter' | 'main' | 'dessert';
+                             return (
+                                <div key={course} className="mb-4 bg-gray-50 dark:bg-slate-700/50 p-3 rounded-lg border border-gray-100 dark:border-slate-700">
+                                    <label className="block text-xs font-bold text-gray-500 dark:text-slate-400 uppercase mb-2">{t(course === 'main' ? 'main_dish' : course as any)}</label>
+                                    
+                                    <input 
+                                        type="text" 
+                                        placeholder={t('name')}
+                                        value={(editMealData as any)[course]}
+                                        onChange={(e) => setEditMealData({ ...editMealData, [course]: e.target.value })}
+                                        className="w-full p-2 mb-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-800 dark:text-white text-sm"
+                                    />
+                                    
+                                    <div className="flex gap-2">
                                         <input 
-                                            type="text"
-                                            value={formData[courseKey]}
-                                            onChange={e => setFormData(prev => ({ ...prev, [courseKey]: e.target.value }))}
-                                            placeholder={t('name')}
-                                            className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 outline-none"
+                                            type="url" 
+                                            placeholder="URL Recette"
+                                            value={(editMealData as any)[`${course}Url`] || ''}
+                                            onChange={(e) => setEditMealData({ ...editMealData, [`${course}Url`]: e.target.value })}
+                                            className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg dark:bg-slate-800 dark:text-white text-xs text-gray-500"
                                         />
-                                        <div className="flex gap-2">
-                                            <input 
-                                                type="url"
-                                                value={formData[urlKey] || ''}
-                                                onChange={e => setFormData(prev => ({ ...prev, [urlKey]: e.target.value }))}
-                                                placeholder={t('link_placeholder')}
-                                                className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100 outline-none text-xs"
-                                            />
-                                            {formData[urlKey] && (
+                                        {(editMealData as any)[`${course}Url`] && (
+                                            <>
                                                 <button 
-                                                    onClick={() => handleAnalyzeUrl(courseKey)}
-                                                    disabled={analyzingField === courseKey}
-                                                    className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg"
-                                                    title="Analyser avec l'IA"
+                                                    onClick={() => handleAnalyzeUrl(fieldName)}
+                                                    disabled={analyzingField === course}
+                                                    className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-lg disabled:opacity-50"
+                                                    title="Analyser URL"
                                                 >
-                                                    {analyzingField === courseKey ? <Loader2 size={16} className="animate-spin"/> : <Sparkles size={16}/>}
+                                                    {analyzingField === course ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
                                                 </button>
-                                            )}
-                                            {formData[urlKey] && (
                                                 <a 
-                                                    href={formData[urlKey]} 
+                                                    href={(editMealData as any)[`${course}Url`]} 
                                                     target="_blank" 
                                                     rel="noopener noreferrer"
-                                                    className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg"
+                                                    className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg"
                                                 >
-                                                    <ExternalLink size={16}/>
+                                                    <ExternalLink size={16} />
                                                 </a>
-                                            )}
-                                        </div>
+                                            </>
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
+                                </div>
+                             );
+                        })}
 
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button onClick={() => { setEditingDay(null); setEditingType(null); }} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
-                            <button onClick={handleSave} className="px-6 py-2 bg-primary-600 text-white rounded-lg shadow-md hover:bg-primary-700">{t('save')}</button>
+                        <div className="flex justify-end gap-2 mt-4">
+                            <button onClick={() => { setEditingDay(null); setEditingType(null); }} className="px-4 py-2 text-gray-600 dark:text-slate-300">{t('cancel')}</button>
+                            <button onClick={handleSaveMeal} className="px-6 py-2 bg-primary-600 text-white rounded-lg shadow-md hover:bg-primary-700">{t('save')}</button>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* --- Recipe Create/Edit Modal (from Menu) --- */}
-            {isRecipeModalOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
-                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md p-6 animate-pop max-h-[90vh] overflow-y-auto">
+            {/* AI Config Modal */}
+            {isAIModalOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-sm p-6 animate-pop">
                         <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-lg font-bold text-slate-800 dark:text-white">{t('new_recipe')}</h3>
-                            <button onClick={() => setIsRecipeModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
+                             <h3 className="text-lg font-bold dark:text-white flex items-center gap-2"><Sparkles className="text-purple-500" /> {t('ai_config_title')}</h3>
+                             <button onClick={() => setIsAIModalOpen(false)}><X className="text-gray-400 hover:text-red-500"/></button>
                         </div>
-
+                        
                         <div className="space-y-4">
-                            {/* Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_name')}</label>
-                                <input 
-                                    type="text" 
-                                    value={recipeFormData.name}
-                                    onChange={(e) => setRecipeFormData({...recipeFormData, name: e.target.value})}
-                                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
-                                    autoFocus
-                                />
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Type */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('type')}</label>
-                                    <select 
-                                        value={recipeFormData.type}
-                                        onChange={(e) => setRecipeFormData({...recipeFormData, type: e.target.value as DishType})}
-                                        className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
-                                    >
-                                        <option value="">{t('none_type')}</option>
-                                        <option value="starter">{t('starter')}</option>
-                                        <option value="main">{t('main_dish')}</option>
-                                        <option value="dessert">{t('dessert')}</option>
-                                    </select>
-                                </div>
-                                {/* Season */}
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('season')}</label>
-                                    <select 
-                                        value={recipeFormData.season}
-                                        onChange={(e) => setRecipeFormData({...recipeFormData, season: e.target.value as Season})}
-                                        className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
-                                    >
-                                        <option value="">{t('none_season')}</option>
-                                        <option value="all">{t('all_seasons')}</option>
-                                        <option value="spring">{t('spring')}</option>
-                                        <option value="summer">{t('summer')}</option>
-                                        <option value="autumn">{t('autumn')}</option>
-                                        <option value="winter">{t('winter')}</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            {/* Category */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_category')}</label>
+                                <label className="block text-sm font-medium dark:text-white mb-1">Régime / Restriction</label>
                                 <select 
-                                    value={recipeFormData.categoryId}
-                                    onChange={(e) => setRecipeFormData({...recipeFormData, categoryId: e.target.value})}
-                                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                                    className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                                    value={aiConfig.restriction}
+                                    onChange={(e) => setAiConfig({...aiConfig, restriction: e.target.value})}
                                 >
-                                    <option value="">{t('none_category')}</option>
-                                    {recipeCategories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                    <option value="none">{t('ai_restriction_none')}</option>
+                                    <option value="vegetarian">{t('ai_restriction_veg')}</option>
+                                    <option value="nopork">{t('ai_restriction_nopork')}</option>
+                                </select>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                                <input 
+                                    type="checkbox" 
+                                    id="dietetic"
+                                    checked={aiConfig.dietetic}
+                                    onChange={(e) => setAiConfig({...aiConfig, dietetic: e.target.checked})}
+                                    className="w-5 h-5 text-primary-600 rounded focus:ring-primary-500"
+                                />
+                                <label htmlFor="dietetic" className="dark:text-white">{t('ai_dietetic')}</label>
+                            </div>
+
+                            <div>
+                                <label className="block text-sm font-medium dark:text-white mb-1">Temps de cuisine</label>
+                                <select 
+                                    className="w-full p-2 border rounded-lg dark:bg-slate-700 dark:text-white dark:border-slate-600"
+                                    value={aiConfig.time}
+                                    onChange={(e) => setAiConfig({...aiConfig, time: e.target.value})}
+                                >
+                                    <option value="yes">{t('ai_time_yes')}</option>
+                                    <option value="no">{t('ai_time_no')}</option>
                                 </select>
                             </div>
 
-                            {/* Link */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_link')}</label>
-                                <div className="flex gap-2">
-                                    <input 
-                                        type="url" 
-                                        value={recipeFormData.link}
-                                        onChange={(e) => setRecipeFormData({...recipeFormData, link: e.target.value})}
-                                        placeholder="https://..."
-                                        className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
-                                    />
-                                    {recipeFormData.link && (
-                                        <button
-                                            onClick={handleAnalyzeRecipeInModal}
-                                            disabled={isAnalyzingRecipe}
-                                            className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
-                                            title="Analyser le site"
-                                        >
-                                            {isAnalyzingRecipe ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                                        </button>
-                                    )}
-                                    {recipeFormData.link && (
-                                        <a 
-                                            href={recipeFormData.link} 
-                                            target="_blank" 
-                                            rel="noopener noreferrer"
-                                            className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center"
-                                            title={t('link_open')}
-                                        >
-                                            <ExternalLink size={20} />
-                                        </a>
-                                    )}
+                            <div className="bg-gray-50 dark:bg-slate-700 p-3 rounded-lg">
+                                <p className="text-xs font-bold text-gray-500 dark:text-slate-300 uppercase mb-2">{t('ai_courses_title')}</p>
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" checked={aiConfig.includeStarter} onChange={e => setAiConfig({...aiConfig, includeStarter: e.target.checked})} />
+                                        <span className="text-sm dark:text-white">{t('starter')}</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" checked={aiConfig.includeMain} onChange={e => setAiConfig({...aiConfig, includeMain: e.target.checked})} />
+                                        <span className="text-sm dark:text-white">{t('main_dish')}</span>
+                                    </label>
+                                    <label className="flex items-center gap-2">
+                                        <input type="checkbox" checked={aiConfig.includeDessert} onChange={e => setAiConfig({...aiConfig, includeDessert: e.target.checked})} />
+                                        <span className="text-sm dark:text-white">{t('dessert')}</span>
+                                    </label>
                                 </div>
                             </div>
 
-                            {/* Note */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_note')}</label>
-                                <textarea 
-                                    rows={3}
-                                    value={recipeFormData.note}
-                                    onChange={(e) => setRecipeFormData({...recipeFormData, note: e.target.value})}
-                                    className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
-                                />
+                            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-100 dark:border-yellow-900 p-3 rounded-lg">
+                                <p className="text-xs text-yellow-700 dark:text-yellow-400 flex gap-1">
+                                    <Loader2 size={12} className={isGenerating ? "animate-spin" : ""} />
+                                    {t('ai_warning_long')}
+                                </p>
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-3 mt-6">
-                            <button onClick={() => setIsRecipeModalOpen(false)} className="px-4 py-2 text-gray-600 dark:text-slate-400">{t('cancel')}</button>
-                            <button onClick={handleSaveRecipe} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700">{t('save')}</button>
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button 
+                                onClick={handleGenerateAI} 
+                                disabled={isGenerating}
+                                className="w-full py-3 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl shadow-lg font-bold flex items-center justify-center gap-2 hover:opacity-90 disabled:opacity-50"
+                            >
+                                {isGenerating ? (
+                                    <><Loader2 className="animate-spin" /> {t('ai_generating')}</>
+                                ) : (
+                                    <><Sparkles /> Générer le menu</>
+                                )}
+                            </button>
                         </div>
                     </div>
                 </div>

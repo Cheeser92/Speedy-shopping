@@ -1,7 +1,8 @@
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem, Recipe, RecipeCategory } from '../types';
-import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS, DEFAULT_RECIPE_CATEGORIES } from '../constants';
+import { TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS } from '../constants';
 import { GoogleGenAI, Type } from "@google/genai";
+import { dbService } from './database';
 
 interface AppState {
   categories: Category[];
@@ -84,137 +85,66 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [recipeCategories, setRecipeCategories] = useState<RecipeCategory[]>([]);
   const [units, setUnits] = useState<string[]>([]);
+  
   const [darkMode, setDarkMode] = useState(false);
   const [themeColor, setThemeColor] = useState<ThemeColor>('blue');
   const [fontSize, setFontSize] = useState<AppFontSize>('medium');
   const [language, setLanguage] = useState<Language>('en');
+  
   const [loaded, setLoaded] = useState(false);
 
-  // Load data from localStorage or init defaults
+  // Initialize DB and Load Data
   useEffect(() => {
-    const savedCategories = localStorage.getItem('categories');
-    const savedProducts = localStorage.getItem('products');
-    const savedStores = localStorage.getItem('stores');
-    const savedLists = localStorage.getItem('shoppingLists');
-    const savedMenus = localStorage.getItem('weeklyMenus');
-    const savedRecipes = localStorage.getItem('recipes');
-    const savedRecipeCategories = localStorage.getItem('recipeCategories');
-    const savedUnits = localStorage.getItem('units');
-    const savedDarkMode = localStorage.getItem('darkMode');
-    const savedThemeColor = localStorage.getItem('themeColor');
-    const savedFontSize = localStorage.getItem('fontSize');
-    const savedLanguage = localStorage.getItem('language');
+    const initApp = async () => {
+        try {
+            await dbService.initializeAndMigrate();
+            
+            // Load Data
+            const cats = await dbService.getAll<Category>('categories');
+            const prods = await dbService.getAll<Product>('products');
+            const sts = await dbService.getAll<Store>('stores');
+            const lists = await dbService.getAll<ShoppingList>('shoppingLists');
+            const menus = await dbService.getAll<WeeklyMenu>('weeklyMenus');
+            const recs = await dbService.getAll<Recipe>('recipes');
+            const recCats = await dbService.getAll<RecipeCategory>('recipeCategories');
+            const unitObjs = await dbService.getAll<{name: string}>('units');
+            const prefObj = await dbService.get<{id: string, darkMode: boolean, themeColor: ThemeColor, fontSize: AppFontSize, language: Language}>('preferences', 'user_settings');
 
-    let initialCategories: Category[] = [];
+            setCategories(cats);
+            setProducts(prods);
+            setStores(sts);
+            setShoppingLists(lists);
+            setWeeklyMenus(menus);
+            setRecipes(recs);
+            setRecipeCategories(recCats);
+            setUnits(unitObjs.map(u => u.name));
 
-    if (savedCategories) {
-      initialCategories = JSON.parse(savedCategories);
-      setCategories(initialCategories);
-    } else {
-      initialCategories = DEFAULT_CATEGORIES.map(c => ({ ...c, id: generateId() }));
-      setCategories(initialCategories);
-    }
-
-    if (savedProducts) {
-      setProducts(JSON.parse(savedProducts));
-    } else {
-      // Generate default products from constants if no products exist
-      const initialProducts: Product[] = DEFAULT_INITIAL_PRODUCTS.map(def => {
-        const category = initialCategories.find(c => c.name === def.categoryName);
-        if (category) {
-          return {
-            id: generateId(),
-            name: def.name,
-            categoryId: category.id,
-            defaultPrice: 0,
-            defaultUnit: (def as any).unit || 'Aucune',
-            priceHistory: [] // Initial history is empty as requested
-          };
+            if (prefObj) {
+                setDarkMode(prefObj.darkMode);
+                setThemeColor(prefObj.themeColor);
+                setFontSize(prefObj.fontSize);
+                setLanguage(prefObj.language);
+            }
+            
+            setLoaded(true);
+        } catch (e) {
+            console.error("Initialization failed", e);
         }
-        return null;
-      }).filter((p): p is Product => p !== null);
-      
-      setProducts(initialProducts);
-    }
-
-    if (savedStores) {
-      setStores(JSON.parse(savedStores));
-    } else {
-      const sortedDefaultCatIds = [...initialCategories]
-        .sort((a, b) => a.name.localeCompare(b.name))
-        .map(c => c.id);
-
-      const initialStores = DEFAULT_STORE_NAMES.map((name, index) => ({
-        id: generateId(),
-        name,
-        isFavorite: index === 0,
-        categoryOrder: sortedDefaultCatIds
-      }));
-      setStores(initialStores);
-    }
-
-    if (savedLists) setShoppingLists(JSON.parse(savedLists));
-    if (savedMenus) setWeeklyMenus(JSON.parse(savedMenus));
-    
-    if (savedRecipes) {
-        setRecipes(JSON.parse(savedRecipes));
-    }
-
-    if (savedRecipeCategories) {
-        setRecipeCategories(JSON.parse(savedRecipeCategories));
-    } else {
-        const initialRecipeCats = DEFAULT_RECIPE_CATEGORIES.map(name => ({ id: generateId(), name }));
-        setRecipeCategories(initialRecipeCats);
-    }
-
-    if (savedUnits) {
-        const parsedSavedUnits: string[] = JSON.parse(savedUnits);
-        const mergedUnits = Array.from(new Set([...parsedSavedUnits, ...DEFAULT_UNITS]));
-        setUnits(mergedUnits);
-    } else {
-        setUnits(DEFAULT_UNITS);
-    }
-
-    if (savedDarkMode) {
-      setDarkMode(JSON.parse(savedDarkMode));
-    }
-
-    if (savedThemeColor) {
-        setThemeColor(savedThemeColor as ThemeColor);
-    }
-
-    if (savedFontSize) {
-        if (Object.keys(FONT_SIZES).includes(savedFontSize)) {
-            setFontSize(savedFontSize as AppFontSize);
-        } else {
-            setFontSize('medium');
-        }
-    }
-
-    if (savedLanguage && (savedLanguage === 'fr' || savedLanguage === 'en')) {
-      setLanguage(savedLanguage as Language);
-    }
-    
-    setLoaded(true);
+    };
+    initApp();
   }, []);
 
-  // Persist on change
-  useEffect(() => {
-    if (loaded) {
-      localStorage.setItem('categories', JSON.stringify(categories));
-      localStorage.setItem('products', JSON.stringify(products));
-      localStorage.setItem('stores', JSON.stringify(stores));
-      localStorage.setItem('shoppingLists', JSON.stringify(shoppingLists));
-      localStorage.setItem('weeklyMenus', JSON.stringify(weeklyMenus));
-      localStorage.setItem('recipes', JSON.stringify(recipes));
-      localStorage.setItem('recipeCategories', JSON.stringify(recipeCategories));
-      localStorage.setItem('units', JSON.stringify(units));
-      localStorage.setItem('darkMode', JSON.stringify(darkMode));
-      localStorage.setItem('themeColor', themeColor);
-      localStorage.setItem('fontSize', fontSize);
-      localStorage.setItem('language', language);
-    }
-  }, [categories, products, stores, shoppingLists, weeklyMenus, recipes, recipeCategories, units, darkMode, themeColor, fontSize, language, loaded]);
+  // Update Preferences Helper
+  const updatePreferences = async (updates: Partial<{darkMode: boolean, themeColor: ThemeColor, fontSize: AppFontSize, language: Language}>) => {
+      const newPrefs = { 
+          id: 'user_settings',
+          darkMode: updates.darkMode ?? darkMode,
+          themeColor: updates.themeColor ?? themeColor,
+          fontSize: updates.fontSize ?? fontSize,
+          language: updates.language ?? language
+      };
+      await dbService.put('preferences', newPrefs);
+  };
 
   // Apply Dark Mode Class
   useEffect(() => {
@@ -227,12 +157,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Apply CSS Variables for Theme
   useEffect(() => {
-    const palette = THEME_PALETTES[themeColor];
-    const root = document.documentElement;
-    Object.entries(palette).forEach(([shade, value]) => {
-        root.style.setProperty(`--color-primary-${shade}`, value as string);
+    // Only apply if loaded to prevent flash of wrong color
+    if (!loaded) return; 
+    
+    // Safety check for palettes
+    import('../constants').then(({ THEME_PALETTES }) => {
+        const palette = THEME_PALETTES[themeColor];
+        if (palette) {
+            const root = document.documentElement;
+            Object.entries(palette).forEach(([shade, value]) => {
+                root.style.setProperty(`--color-primary-${shade}`, value as string);
+            });
+        }
     });
-  }, [themeColor]);
+  }, [themeColor, loaded]);
 
   // Translation Functions
   const t = (key: keyof typeof TRANSLATIONS['fr']): string => {
@@ -279,22 +217,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   }, [units, language]);
 
-  const addCategory = (name: string, iconName: string) => {
+  // --- ACTIONS (Now async writing to DB first, then state) ---
+
+  const addCategory = async (name: string, iconName: string) => {
     const newCat: Category = { id: generateId(), name, iconName };
+    await dbService.put('categories', newCat);
     setCategories(prev => [...prev, newCat]);
-    setStores(prev => prev.map(s => ({...s, categoryOrder: [...s.categoryOrder, newCat.id]})));
+    
+    // Update stores as well to include new category
+    const updatedStores = stores.map(s => ({...s, categoryOrder: [...s.categoryOrder, newCat.id]}));
+    for (const store of updatedStores) {
+        await dbService.put('stores', store);
+    }
+    setStores(updatedStores);
   };
 
-  const updateCategory = (id: string, name: string, iconName: string) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, name, iconName } : c));
+  const updateCategory = async (id: string, name: string, iconName: string) => {
+    const updated = { id, name, iconName };
+    await dbService.put('categories', updated);
+    setCategories(prev => prev.map(c => c.id === id ? updated : c));
   };
 
-  const deleteCategory = (id: string) => {
+  const deleteCategory = async (id: string) => {
+    await dbService.delete('categories', id);
     setCategories(prev => prev.filter(c => c.id !== id));
-    setStores(prev => prev.map(s => ({
+    
+    // Update stores to remove category reference
+    const updatedStores = stores.map(s => ({
         ...s,
         categoryOrder: s.categoryOrder.filter(cId => cId !== id)
-    })));
+    }));
+    for (const store of updatedStores) {
+        await dbService.put('stores', store);
+    }
+    setStores(updatedStores);
   };
 
   const addProduct = (productData: Omit<Product, 'id' | 'priceHistory'>) => {
@@ -304,28 +260,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId,
       priceHistory: [{ date: getTodayDate(), price: productData.defaultPrice }]
     };
+    // Sync DB
+    dbService.put('products', newProduct).catch(console.error);
+    // Update State
     setProducts(prev => [...prev, newProduct]);
     return newId;
   };
 
-  const updateProduct = (updated: Product) => {
-    setProducts(prev => prev.map(p => {
-      if (p.id === updated.id) {
-        const history = [...p.priceHistory];
-        if (p.defaultPrice !== updated.defaultPrice) {
+  const updateProduct = async (updated: Product) => {
+    // Logic for price history
+    const existing = products.find(p => p.id === updated.id);
+    let finalProduct = updated;
+    
+    if (existing) {
+        const history = [...existing.priceHistory];
+        if (existing.defaultPrice !== updated.defaultPrice) {
           history.push({ date: getTodayDate(), price: updated.defaultPrice });
         }
-        return { ...updated, priceHistory: history };
-      }
-      return p;
-    }));
+        finalProduct = { ...updated, priceHistory: history };
+    }
+
+    await dbService.put('products', finalProduct);
+    setProducts(prev => prev.map(p => p.id === updated.id ? finalProduct : p));
   };
 
-  const deleteProduct = (id: string) => {
+  const deleteProduct = async (id: string) => {
+    await dbService.delete('products', id);
     setProducts(prev => prev.filter(p => p.id !== id));
   };
 
-  const addStore = (name: string) => {
+  const addStore = async (name: string) => {
     const sortedCatIds = [...categories]
       .sort((a, b) => a.name.localeCompare(b.name))
       .map(c => c.id);
@@ -336,42 +300,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       isFavorite: stores.length === 0,
       categoryOrder: sortedCatIds
     };
+    await dbService.put('stores', newStore);
     setStores(prev => [...prev, newStore]);
   };
 
-  const updateStore = (store: Store) => {
+  const updateStore = async (store: Store) => {
+    await dbService.put('stores', store);
     setStores(prev => prev.map(s => s.id === store.id ? store : s));
   };
 
-  const deleteStore = (id: string) => {
+  const deleteStore = async (id: string) => {
+    await dbService.delete('stores', id);
     setStores(prev => prev.filter(s => s.id !== id));
   };
 
-  const toggleFavoriteStore = (id: string) => {
-    if (stores.find(s => s.id === id)?.isFavorite) return;
-    setStores(prev => prev.map(s => ({ ...s, isFavorite: s.id === id })));
+  const toggleFavoriteStore = async (id: string) => {
+    const updatedStores = stores.map(s => ({ ...s, isFavorite: s.id === id }));
+    // Batch update DB
+    for(const store of updatedStores) {
+        await dbService.put('stores', store);
+    }
+    setStores(updatedStores);
   };
 
-  const addShoppingList = (name: string, initialItems: ShoppingListItem[] = []) => {
+  const addShoppingList = async (name: string, initialItems: ShoppingListItem[] = []) => {
     const favStore = stores.find(s => s.isFavorite);
-    setShoppingLists(prev => [{
+    const newList = {
       id: generateId(),
       name,
       createdAt: getTodayDate(),
       storeId: favStore?.id,
       items: initialItems
-    }, ...prev]);
+    };
+    await dbService.put('shoppingLists', newList);
+    setShoppingLists(prev => [newList, ...prev]);
   };
 
-  const updateShoppingList = (list: ShoppingList) => {
+  const updateShoppingList = async (list: ShoppingList) => {
+    await dbService.put('shoppingLists', list);
     setShoppingLists(prev => prev.map(l => l.id === list.id ? list : l));
   };
 
-  const deleteShoppingList = (id: string) => {
+  const deleteShoppingList = async (id: string) => {
+    await dbService.delete('shoppingLists', id);
     setShoppingLists(prev => prev.filter(l => l.id !== id));
   };
 
-  const duplicateShoppingList = (id: string) => {
+  const duplicateShoppingList = async (id: string) => {
     const list = shoppingLists.find(l => l.id === id);
     if (list) {
       const newList = {
@@ -381,30 +356,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createdAt: getTodayDate(),
         items: list.items.map(i => ({...i, isChecked: false}))
       };
+      await dbService.put('shoppingLists', newList);
       setShoppingLists(prev => [newList, ...prev]);
     }
   };
 
   // --- MENU FUNCTIONS ---
 
-  const addWeeklyMenu = (menuData: Omit<WeeklyMenu, 'id' | 'createdAt'>) => {
+  const addWeeklyMenu = async (menuData: Omit<WeeklyMenu, 'id' | 'createdAt'>) => {
     const newMenu: WeeklyMenu = {
       ...menuData,
       id: generateId(),
       createdAt: getTodayDate(),
     };
+    await dbService.put('weeklyMenus', newMenu);
     setWeeklyMenus(prev => [newMenu, ...prev]);
   };
 
-  const updateWeeklyMenu = (menu: WeeklyMenu) => {
+  const updateWeeklyMenu = async (menu: WeeklyMenu) => {
+    await dbService.put('weeklyMenus', menu);
     setWeeklyMenus(prev => prev.map(m => m.id === menu.id ? menu : m));
   };
 
-  const deleteWeeklyMenu = (id: string) => {
+  const deleteWeeklyMenu = async (id: string) => {
+    await dbService.delete('weeklyMenus', id);
     setWeeklyMenus(prev => prev.filter(m => m.id !== id));
   };
 
-  const duplicateWeeklyMenu = (id: string) => {
+  const duplicateWeeklyMenu = async (id: string) => {
     const menu = weeklyMenus.find(m => m.id === id);
     if (menu) {
       const newMenu = {
@@ -413,35 +392,45 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         name: `${menu.name} (Copie)`,
         createdAt: getTodayDate()
       };
+      await dbService.put('weeklyMenus', newMenu);
       setWeeklyMenus(prev => [newMenu, ...prev]);
     }
   };
 
   // --- RECIPE FUNCTIONS ---
 
-  const addRecipe = (recipeData: Omit<Recipe, 'id'>) => {
-      setRecipes(prev => [...prev, { ...recipeData, id: generateId() }]);
+  const addRecipe = async (recipeData: Omit<Recipe, 'id'>) => {
+      const newRecipe = { ...recipeData, id: generateId() };
+      await dbService.put('recipes', newRecipe);
+      setRecipes(prev => [...prev, newRecipe]);
   };
 
-  const updateRecipe = (recipe: Recipe) => {
+  const updateRecipe = async (recipe: Recipe) => {
+      await dbService.put('recipes', recipe);
       setRecipes(prev => prev.map(r => r.id === recipe.id ? recipe : r));
   };
 
-  const deleteRecipe = (id: string) => {
+  const deleteRecipe = async (id: string) => {
+      await dbService.delete('recipes', id);
       setRecipes(prev => prev.filter(r => r.id !== id));
   };
 
-  const addRecipeCategory = (name: string) => {
+  const addRecipeCategory = async (name: string) => {
       const id = generateId();
-      setRecipeCategories(prev => [...prev, { id, name }]);
+      const newCat = { id, name };
+      await dbService.put('recipeCategories', newCat);
+      setRecipeCategories(prev => [...prev, newCat]);
       return id;
   };
 
-  const updateRecipeCategory = (id: string, name: string) => {
-      setRecipeCategories(prev => prev.map(c => c.id === id ? { ...c, name } : c));
+  const updateRecipeCategory = async (id: string, name: string) => {
+      const updated = { id, name };
+      await dbService.put('recipeCategories', updated);
+      setRecipeCategories(prev => prev.map(c => c.id === id ? updated : c));
   };
 
-  const deleteRecipeCategory = (id: string) => {
+  const deleteRecipeCategory = async (id: string) => {
+      await dbService.delete('recipeCategories', id);
       setRecipeCategories(prev => prev.filter(c => c.id !== id));
   };
 
@@ -490,7 +479,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               }
           });
 
-          // response.text est maintenant garanti d'être du JSON valide grâce au responseSchema
           const result = JSON.parse(response.text || "{}");
           
           return {
@@ -656,11 +644,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           if (!process.env.API_KEY) throw new Error("API Key missing");
           const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
           
-          // Prepare context
           const productListContext = products.map(p => `- ID: ${p.id}, Name: ${p.name}`).join('\n');
           const unitListContext = units.join(', ');
           
-          // Updated prompt to force search of ingredients and semantic unit matching
           const prompt = `
             Task: Create a detailed shopping list for the recipe "${recipeName}".
             Recipe URL: ${url}
@@ -726,7 +712,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
               };
           });
 
-          addShoppingList(recipeName, newItems);
+          await addShoppingList(recipeName, newItems);
 
       } catch (error) {
           console.error("Failed to create list from recipe", error);
@@ -736,49 +722,89 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // ----------------------
 
-  const addUnit = (unit: string) => {
+  const addUnit = async (unit: string) => {
     const trimmed = unit.trim();
     if(trimmed && !units.some(u => u.toLowerCase() === trimmed.toLowerCase())) {
+        await dbService.put('units', { name: trimmed });
         setUnits(prev => [...prev, trimmed]);
     }
   };
 
-  const updateUnit = (oldUnit: string, newUnit: string) => {
-    setUnits(prev => prev.map(u => u === oldUnit ? newUnit.trim() : u));
+  const updateUnit = async (oldUnit: string, newUnit: string) => {
+    const trimmedNew = newUnit.trim();
+    // In IDB, 'name' is the key, so we delete old and add new
+    await dbService.delete('units', oldUnit);
+    await dbService.put('units', { name: trimmedNew });
+    setUnits(prev => prev.map(u => u === oldUnit ? trimmedNew : u));
   };
 
-  const deleteUnit = (unit: string) => {
+  const deleteUnit = async (unit: string) => {
+    await dbService.delete('units', unit);
     setUnits(prev => prev.filter(u => u !== unit));
   };
 
   const toggleDarkMode = () => {
-    setDarkMode(prev => !prev);
+    const newVal = !darkMode;
+    setDarkMode(newVal);
+    updatePreferences({ darkMode: newVal });
   };
 
-  const importData = (data: BackupData) => {
-      // Validation basique
+  const setThemeColorWrapper = (color: ThemeColor) => {
+      setThemeColor(color);
+      updatePreferences({ themeColor: color });
+  };
+
+  const setFontSizeWrapper = (size: AppFontSize) => {
+      setFontSize(size);
+      updatePreferences({ fontSize: size });
+  };
+
+  const setLanguageWrapper = (lang: Language) => {
+      setLanguage(lang);
+      updatePreferences({ language: lang });
+  };
+
+  const importData = async (data: BackupData) => {
       if (!data.categories || !data.products || !data.stores || !data.shoppingLists) {
           throw new Error("Format de fichier invalide");
       }
 
+      // Clear existing DB first for clean import
+      await dbService.clearAllData();
+
+      // Bulk add
+      // Note: dbService helper for bulk add isn't exposed publicly in the simple interface, 
+      // but we can iterate put.
+      
+      const promises = [];
+      
+      for(const c of data.categories) promises.push(dbService.put('categories', c));
+      for(const p of data.products) promises.push(dbService.put('products', p));
+      for(const s of data.stores) promises.push(dbService.put('stores', s));
+      for(const l of data.shoppingLists) promises.push(dbService.put('shoppingLists', l));
+      if(data.weeklyMenus) for(const m of data.weeklyMenus) promises.push(dbService.put('weeklyMenus', m));
+      if(data.recipes) for(const r of data.recipes) promises.push(dbService.put('recipes', r));
+      if(data.recipeCategories) for(const rc of data.recipeCategories) promises.push(dbService.put('recipeCategories', rc));
+      
+      const unitsToImport = data.units || [];
+      for(const u of unitsToImport) promises.push(dbService.put('units', { name: u }));
+
+      if (data.preferences) {
+          const pref = { id: 'user_settings', ...data.preferences };
+          promises.push(dbService.put('preferences', pref));
+      }
+
+      await Promise.all(promises);
+
+      // Reload state
       setCategories(data.categories);
       setProducts(data.products);
       setStores(data.stores);
       setShoppingLists(data.shoppingLists);
-      if(data.weeklyMenus) setWeeklyMenus(data.weeklyMenus);
-      if(data.recipes) setRecipes(data.recipes);
-      if(data.recipeCategories) {
-          setRecipeCategories(data.recipeCategories);
-      } else {
-          const initialRecipeCats = DEFAULT_RECIPE_CATEGORIES.map(name => ({ id: generateId(), name }));
-          setRecipeCategories(initialRecipeCats);
-      }
-      
-      if(data.units) {
-          setUnits(data.units);
-      } else {
-          setUnits(DEFAULT_UNITS);
-      }
+      if(data.weeklyMenus) setWeeklyMenus(data.weeklyMenus); else setWeeklyMenus([]);
+      if(data.recipes) setRecipes(data.recipes); else setRecipes([]);
+      if(data.recipeCategories) setRecipeCategories(data.recipeCategories); else setRecipeCategories([]);
+      setUnits(unitsToImport);
       
       if(data.preferences) {
           if (data.preferences.darkMode !== undefined) setDarkMode(!!data.preferences.darkMode);
@@ -804,7 +830,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       addRecipe, updateRecipe, deleteRecipe, analyzeRecipeUrl,
       addRecipeCategory, updateRecipeCategory, deleteRecipeCategory,
       addUnit, updateUnit, deleteUnit,
-      toggleDarkMode, setThemeColor, setFontSize, setLanguage,
+      toggleDarkMode, 
+      setThemeColor: setThemeColorWrapper, 
+      setFontSize: setFontSizeWrapper, 
+      setLanguage: setLanguageWrapper,
       importData,
       t, t_cat, t_prod, t_unit
     }}>

@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
@@ -19,7 +18,7 @@ const ShoppingListsView: React.FC = () => {
   
   const navigate = useNavigate();
 
-  // Initialize viewMode
+  // Navigation Tabs State (renamed from activeTab to viewMode to match preferred style)
   const [viewMode, setViewMode] = useState<'shopping' | 'menus' | 'recipes'>('shopping');
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -971,44 +970,42 @@ const ShoppingListsView: React.FC = () => {
 
                      <div>
                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_link')}</label>
-                         <div className="flex gap-2">
+                         <div className="flex gap-2 items-center">
                              <input 
                                  type="url" 
                                  value={recipeFormData.link}
                                  onChange={(e) => setRecipeFormData({...recipeFormData, link: e.target.value})}
                                  placeholder="https://..."
-                                 className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                                 className="flex-1 w-full min-w-0 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                              />
                              {recipeFormData.link && (
-                                 <button
-                                     onClick={handleAnalyzeUrl}
-                                     disabled={isAnalyzing}
-                                     className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
-                                     title="Analyser le site pour extraire la recette"
-                                 >
-                                     {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                                 </button>
-                             )}
-                             {recipeFormData.link && (
-                                <button
-                                    onClick={handleCreateListFromRecipe}
-                                    disabled={loadingRecipeUrl === recipeFormData.link || (recipeFormData.name ? shoppingLists.some(l => l.name === recipeFormData.name) : false)}
-                                    className={`p-2 rounded-lg transition-colors ${recipeFormData.name && shoppingLists.some(l => l.name === recipeFormData.name) ? 'bg-gray-100 dark:bg-slate-700 text-gray-400 cursor-default' : 'bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60'}`}
-                                    title="Créer une liste de courses"
-                                >
-                                    {loadingRecipeUrl === recipeFormData.link ? <Loader2 size={20} className="animate-spin" /> : (recipeFormData.name && shoppingLists.some(l => l.name === recipeFormData.name) ? <Check size={20} /> : <ListPlus size={20} />)}
-                                </button>
-                             )}
-                             {recipeFormData.link && (
-                                 <a 
-                                     href={recipeFormData.link} 
-                                     target="_blank" 
-                                     rel="noopener noreferrer"
-                                     className="p-2 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center"
-                                     title={t('link_open')}
-                                 >
-                                     <ExternalLink size={20} />
-                                 </a>
+                                <div className="flex gap-1 flex-shrink-0">
+                                     <button
+                                         onClick={handleAnalyzeUrl}
+                                         disabled={isAnalyzing}
+                                         className="p-0 w-10 h-10 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
+                                         title="Analyser le site pour extraire la recette"
+                                     >
+                                         {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                                     </button>
+                                     <button
+                                         onClick={handleCreateListFromRecipe}
+                                         disabled={loadingRecipeUrl === recipeFormData.link}
+                                         className="p-0 w-10 h-10 rounded-lg transition-colors flex items-center justify-center bg-green-100 dark:bg-green-900/40 text-green-600 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/60 disabled:opacity-50"
+                                         title="Créer une liste de courses"
+                                     >
+                                         {loadingRecipeUrl === recipeFormData.link ? <Loader2 size={20} className="animate-spin" /> : <ListPlus size={20} />}
+                                     </button>
+                                     <a 
+                                         href={recipeFormData.link} 
+                                         target="_blank" 
+                                         rel="noopener noreferrer"
+                                         className="p-0 w-10 h-10 bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors flex items-center justify-center"
+                                         title={t('link_open')}
+                                     >
+                                         <ExternalLink size={20} />
+                                     </a>
+                                </div>
                              )}
                          </div>
                      </div>
