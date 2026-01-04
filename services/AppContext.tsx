@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { Category, Product, ShoppingList, Store, ThemeColor, AppFontSize, BackupData, WeeklyMenu, DayMenu, Language, ShoppingListItem, Recipe, RecipeCategory } from '../types';
 import { DEFAULT_CATEGORIES, DEFAULT_STORE_NAMES, DEFAULT_UNITS, THEME_PALETTES, FONT_SIZES, DEFAULT_INITIAL_PRODUCTS, TRANSLATIONS, CATEGORY_TRANSLATIONS, UNIT_TRANSLATIONS, PRODUCT_TRANSLATIONS, DEFAULT_RECIPE_CATEGORIES } from '../constants';
@@ -265,6 +264,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const sortedCategories = useMemo(() => {
     return [...categories].sort((a, b) => t_cat(a.name).localeCompare(t_cat(b.name)));
   }, [categories, language]);
+
+  // Sort recipe categories alphabetically
+  const sortedRecipeCategories = useMemo(() => {
+      return [...recipeCategories].sort((a, b) => a.name.localeCompare(b.name));
+  }, [recipeCategories]);
 
   // Sort units alphabetically for display (localized)
   const sortedUnits = useMemo(() => {
@@ -786,8 +790,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   return (
     <AppContext.Provider value={{
-      categories,
-      products, stores, shoppingLists, weeklyMenus, recipes, recipeCategories,
+      categories: sortedCategories,
+      products, stores, shoppingLists, weeklyMenus, recipes, 
+      recipeCategories: sortedRecipeCategories,
       units: sortedUnits,
       darkMode, themeColor, fontSize, language,
       addCategory, updateCategory, deleteCategory,
