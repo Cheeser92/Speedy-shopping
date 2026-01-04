@@ -2,9 +2,8 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext, createEmptyDayMenu } from '../services/AppContext';
-import { IconComponent } from '../components/IconComponent';
 import { 
-  Plus, Trash2, Edit2, Calendar, ShoppingBag, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow, Mail, Send, Settings2, Eye, Copy, AlertTriangle, ListPlus, Check
+  Plus, Trash2, Edit2, Calendar, ShoppingBag, Euro, Search, Utensils, ChevronRight, X, Shuffle, Sparkles, Link, ExternalLink, Loader2, Clock, ArrowUpNarrowWide, ArrowDownWideNarrow, Mail, Send, Settings2, Eye, Copy, AlertTriangle, ListPlus, Check, Filter
 } from 'lucide-react';
 import { WeeklyMenu, Recipe, DishType, Season, ShoppingListItem } from '../types';
 
@@ -94,6 +93,7 @@ const ShoppingListsView: React.FC = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{id: string, name: string, type: 'list' | 'menu' | 'recipe'} | null>(null);
   
   // Recipe Filters
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
   const [recipeFilterType, setRecipeFilterType] = useState<DishType | 'all'>('all');
   const [recipeFilterSeason, setRecipeFilterSeason] = useState<Season | 'all'>('all');
   const [recipeFilterCategory, setRecipeFilterCategory] = useState<string>('all');
@@ -473,11 +473,6 @@ const ShoppingListsView: React.FC = () => {
       )
   };
 
-  const getSeasonIcon = (season: Season) => {
-      // Assuming icons would be here, simplifying for brevity or use imported ones
-      return null; 
-  };
-
   const getTypeIcon = (type: DishType) => {
       switch(type) {
           case 'starter': return <span className="text-xs font-bold text-green-600 bg-green-100 px-1.5 py-0.5 rounded">E</span>;
@@ -488,6 +483,8 @@ const ShoppingListsView: React.FC = () => {
   };
 
   const showTimeWarning = aiConfig.includeStarter && aiConfig.includeMain && aiConfig.includeDessert;
+
+  const hasActiveFilters = recipeFilterType !== 'all' || recipeFilterSeason !== 'all' || recipeFilterCategory !== 'all';
 
   return (
     <div className="p-4 pb-24 min-h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
@@ -545,6 +542,19 @@ const ShoppingListsView: React.FC = () => {
                   </button>
               )}
 
+              {viewMode === 'recipes' && (
+                  <button 
+                    onClick={() => setIsFilterModalOpen(true)}
+                    className={`p-2.5 rounded-xl border transition-all shadow-sm flex items-center gap-2 font-medium relative ${isFilterModalOpen ? 'bg-primary-600 text-white border-primary-600' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-gray-300 dark:border-slate-700 hover:border-primary-400'}`}
+                    title="Filtrer les recettes"
+                  >
+                      <Filter size={18} />
+                      {hasActiveFilters && (
+                         <span className="absolute top-[-4px] right-[-4px] w-3 h-3 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span> 
+                      )}
+                  </button>
+              )}
+
               {viewMode === 'menus' && (
                   <button 
                     onClick={toggleRandomMenu}
@@ -555,50 +565,6 @@ const ShoppingListsView: React.FC = () => {
                   </button>
               )}
           </div>
-          
-          {/* Row 2: Recipe Filters */}
-          {viewMode === 'recipes' && (
-              <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-                  <select 
-                      value={recipeFilterType} 
-                      onChange={(e) => setRecipeFilterType(e.target.value as DishType | 'all')}
-                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
-                  >
-                      <option value="all">{t('all_seasons')}</option>
-                      <option value="starter">{t('starter')}</option>
-                      <option value="main">{t('main_dish')}</option>
-                      <option value="dessert">{t('dessert')}</option>
-                  </select>
-                  
-                  <select 
-                      value={recipeFilterSeason} 
-                      onChange={(e) => setRecipeFilterSeason(e.target.value as Season | 'all')}
-                      className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
-                  >
-                      <option value="all">{t('all_seasons')}</option>
-                      <option value="spring">{t('spring')}</option>
-                      <option value="summer">{t('summer')}</option>
-                      <option value="autumn">{t('autumn')}</option>
-                      <option value="winter">{t('winter')}</option>
-                  </select>
-
-                   <div className="flex items-center gap-1">
-                      <select 
-                          value={recipeFilterCategory} 
-                          onChange={(e) => setRecipeFilterCategory(e.target.value)}
-                          className="p-2 border border-gray-300 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 text-sm text-gray-700 dark:text-gray-200"
-                      >
-                          <option value="all">Toutes Cat.</option>
-                          {recipeCategories.map(c => (
-                              <option key={c.id} value={c.id}>{c.name}</option>
-                          ))}
-                      </select>
-                      <button onClick={() => setIsRecCatModalOpen(true)} className="p-2 bg-gray-100 dark:bg-slate-800 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-700 text-gray-600 dark:text-gray-300" title={t('manage_recipe_categories')}>
-                          <Settings2 size={18} />
-                      </button>
-                  </div>
-              </div>
-          )}
 
           {/* Row 3: Navigation Pills */}
           <div className="flex flex-col justify-center items-center gap-3">
@@ -607,19 +573,19 @@ const ShoppingListsView: React.FC = () => {
                     onClick={() => setViewMode('menus')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'menus' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('menus')} ({weeklyMenus.length})
+                    {t('menus')}
                   </button>
                   <button 
                     onClick={() => setViewMode('shopping')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'shopping' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('shopping')} ({shoppingLists.length})
+                    {t('shopping')}
                   </button>
                   <button 
                     onClick={() => setViewMode('recipes')}
                     className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all ${viewMode === 'recipes' ? 'bg-primary-600 text-white shadow-md' : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-slate-700'}`}
                   >
-                    {t('recipes')} ({recipes.length})
+                    {t('recipes')}
                   </button>
               </div>
               
@@ -755,6 +721,87 @@ const ShoppingListsView: React.FC = () => {
           </div>
         ))}
       </div>
+
+      {/* --- Recipe Filter Modal --- */}
+      {isFilterModalOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center p-4">
+              <div className="bg-white dark:bg-slate-800 rounded-xl shadow-2xl p-6 w-full max-w-sm animate-pop">
+                  <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
+                          <Filter size={20} />
+                          Filtrer les recettes
+                      </h3>
+                      <button onClick={() => setIsFilterModalOpen(false)}><X className="text-gray-400 hover:text-red-500" /></button>
+                  </div>
+
+                  <div className="space-y-4">
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('type')}</label>
+                          <select 
+                              value={recipeFilterType} 
+                              onChange={(e) => setRecipeFilterType(e.target.value as DishType | 'all')}
+                              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                          >
+                              <option value="all">Tous les types</option>
+                              <option value="starter">{t('starter')}</option>
+                              <option value="main">{t('main_dish')}</option>
+                              <option value="dessert">{t('dessert')}</option>
+                          </select>
+                      </div>
+
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('season')}</label>
+                          <select 
+                              value={recipeFilterSeason} 
+                              onChange={(e) => setRecipeFilterSeason(e.target.value as Season | 'all')}
+                              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                          >
+                              <option value="all">{t('all_seasons')}</option>
+                              <option value="spring">{t('spring')}</option>
+                              <option value="summer">{t('summer')}</option>
+                              <option value="autumn">{t('autumn')}</option>
+                              <option value="winter">{t('winter')}</option>
+                          </select>
+                      </div>
+
+                      <div>
+                          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">{t('recipe_category')}</label>
+                          <div className="flex gap-2">
+                              <select 
+                                  value={recipeFilterCategory} 
+                                  onChange={(e) => setRecipeFilterCategory(e.target.value)}
+                                  className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
+                              >
+                                  <option value="all">Toutes Catégories</option>
+                                  {recipeCategories.map(c => (
+                                      <option key={c.id} value={c.id}>{c.name}</option>
+                                  ))}
+                              </select>
+                              <button onClick={() => setIsRecCatModalOpen(true)} className="p-2 bg-gray-100 dark:bg-slate-700 rounded-lg hover:bg-gray-200 dark:hover:bg-slate-600 text-gray-600 dark:text-gray-300" title={t('manage_recipe_categories')}>
+                                  <Settings2 size={18} />
+                              </button>
+                          </div>
+                      </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 mt-6">
+                     <button 
+                         onClick={() => {
+                             setRecipeFilterType('all');
+                             setRecipeFilterSeason('all');
+                             setRecipeFilterCategory('all');
+                         }}
+                         className="px-4 py-2 text-sm text-red-500 hover:text-red-700"
+                     >
+                         Réinitialiser
+                     </button>
+                     <button onClick={() => setIsFilterModalOpen(false)} className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 shadow">
+                         {t('validate')}
+                     </button>
+                  </div>
+              </div>
+          </div>
+      )}
 
       {/* --- Shopping List Create/Edit Modal --- */}
       {isListModalOpen && (
@@ -932,14 +979,16 @@ const ShoppingListsView: React.FC = () => {
                                  placeholder="https://..."
                                  className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-primary-50 dark:bg-slate-700 text-primary-900 dark:text-primary-100"
                              />
-                             <button
-                                 onClick={handleAnalyzeUrl}
-                                 disabled={isAnalyzing || !recipeFormData.link}
-                                 className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
-                                 title="Analyser le site pour extraire la recette"
-                             >
-                                 {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
-                             </button>
+                             {recipeFormData.link && (
+                                 <button
+                                     onClick={handleAnalyzeUrl}
+                                     disabled={isAnalyzing}
+                                     className="p-2 bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors flex items-center justify-center disabled:opacity-50"
+                                     title="Analyser le site pour extraire la recette"
+                                 >
+                                     {isAnalyzing ? <Loader2 size={20} className="animate-spin" /> : <Sparkles size={20} />}
+                                 </button>
+                             )}
                              {recipeFormData.link && (
                                 <button
                                     onClick={handleCreateListFromRecipe}
@@ -1080,7 +1129,7 @@ const ShoppingListsView: React.FC = () => {
                                   <input 
                                       type="checkbox" 
                                       checked={aiConfig.includeStarter}
-                                      onChange={(e) => setAiConfig({...aiConfig, includeStarter: e.target.checked})}
+                                      onChange={(e) => setAiConfig({...aiConfig,includeStarter: e.target.checked})}
                                       className="rounded text-purple-600 focus:ring-purple-500 bg-white border-gray-300 shadow-sm"
                                   />
                                   <span className="text-slate-700 dark:text-slate-200 text-sm">{t('starter')}</span>

@@ -266,6 +266,13 @@ const ListDetailView: React.FC = () => {
               <option key={s.id} value={s.id}>{s.name} {s.isFavorite ? '★' : ''}</option>
             ))}
           </select>
+          <button
+            onClick={() => navigate(`/shop/${id}`)}
+            className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors shadow-sm flex-shrink-0"
+            title={t('start_shopping')}
+          >
+            <Play size={20} fill="currentColor" />
+          </button>
         </div>
       </div>
 
@@ -388,14 +395,6 @@ const ListDetailView: React.FC = () => {
       {/* Bottom Actions */}
       <div className="bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] absolute bottom-[70px] w-full z-20 transition-colors duration-300">
         
-        {/* Start Shopping Button */}
-        <button 
-            onClick={() => navigate(`/shop/${id}`)}
-            className="w-full mb-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white font-bold py-3 rounded-xl shadow-lg hover:shadow-xl flex items-center justify-center gap-2 transform hover:-translate-y-0.5 transition-all"
-        >
-          <Play size={20} fill="currentColor" /> {t('start_shopping')}
-        </button>
-
         {/* Add Item Input */}
         <div className="relative">
             <div className="relative">
