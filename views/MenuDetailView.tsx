@@ -4,6 +4,8 @@ import { useAppContext } from '../services/AppContext';
 import { ArrowLeft, Save, Sparkles, Loader2, ExternalLink, Calendar, Search, Edit3, ListPlus, BookHeart, X, Check } from 'lucide-react';
 import { DayMenu, DishType, Recipe, Season } from '../types';
 
+const DAYS_ORDER = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
 const MenuDetailView: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -181,25 +183,23 @@ const MenuDetailView: React.FC = () => {
         );
     };
 
-    // Days mapping for translation/display
-    const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-
     return (
         <div className="flex flex-col h-screen bg-primary-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="bg-white dark:bg-slate-900 p-4 shadow-sm z-10 flex items-center gap-3">
-                <button onClick={() => navigate('/')} className="p-2 -ml-2 text-gray-600 dark:text-slate-300"><ArrowLeft /></button>
+                <button onClick={() => navigate(-1)} className="p-2 -ml-2 text-gray-600 dark:text-slate-300"><ArrowLeft /></button>
                 <h1 className="font-bold text-lg truncate flex-1 text-slate-800 dark:text-white">{menu.name}</h1>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 pb-24 space-y-4">
-                {days.map(day => {
+                {DAYS_ORDER.map(day => {
                     const dayData = (menu.days as any)[day];
                     const hasLunch = dayData.lunch.starter || dayData.lunch.main || dayData.lunch.dessert;
                     const hasDinner = dayData.dinner.starter || dayData.dinner.main || dayData.dinner.dessert;
 
                     return (
                         <div key={day} className="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-primary-100 dark:border-slate-800 overflow-hidden">
-                            <div className="bg-primary-100 dark:bg-primary-900/30 p-2 px-4 font-bold text-primary-800 dark:text-primary-200 capitalize flex items-center gap-2">
+                            {/* Correction ici : Utilisation de slate-800 pour le mode sombre au lieu de primary-900/30 */}
+                            <div className="bg-primary-100 dark:bg-slate-800 border-b border-primary-200 dark:border-slate-700 p-2 px-4 font-bold text-primary-800 dark:text-slate-200 capitalize flex items-center gap-2">
                                 <Calendar size={16} />
                                 {t(day as any)}
                             </div>
@@ -208,7 +208,9 @@ const MenuDetailView: React.FC = () => {
                                 {/* Lunch */}
                                 <div className="p-3">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider">{t('lunch')}</span>
+                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider flex items-center gap-1">
+                                           <span>☀️</span> {t('lunch')}
+                                        </span>
                                         <button onClick={() => handleEdit(day, 'lunch')} className="text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 p-1 rounded"><Edit3 size={16} /></button>
                                     </div>
                                     <div className="space-y-1">
@@ -222,7 +224,9 @@ const MenuDetailView: React.FC = () => {
                                 {/* Dinner */}
                                 <div className="p-3 bg-gray-50/50 dark:bg-slate-800/20">
                                     <div className="flex justify-between items-start mb-2">
-                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider">{t('dinner')}</span>
+                                        <span className="text-xs font-bold uppercase text-gray-400 dark:text-slate-500 tracking-wider flex items-center gap-1">
+                                            <span>🌙</span> {t('dinner')}
+                                        </span>
                                         <button onClick={() => handleEdit(day, 'dinner')} className="text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-slate-800 p-1 rounded"><Edit3 size={16} /></button>
                                     </div>
                                     <div className="space-y-1">

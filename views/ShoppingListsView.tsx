@@ -696,7 +696,7 @@ const ShoppingListsView: React.FC = () => {
                       <span className="flex items-center text-xs text-gray-400 dark:text-slate-500">
                         <Calendar size={12} className="mr-1" /> {list.createdAt}
                       </span>
-                      <span className="flex items-center bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 px-2 py-0.5 rounded-md font-medium text-xs border border-primary-100 dark:border-primary-900">
+                      <span className="flex items-center bg-primary-50 dark:bg-slate-700 text-primary-700 dark:text-slate-200 px-2 py-0.5 rounded-md font-medium text-xs border border-primary-100 dark:border-slate-600">
                           <ShoppingBag size={12} className="mr-1" /> {list.items.length}
                       </span>
                       <span className="flex items-center bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 px-2 py-0.5 rounded-md font-medium text-xs border border-green-100 dark:border-green-900">
